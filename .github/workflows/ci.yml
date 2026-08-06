@@ -60,6 +60,20 @@ jobs:
       - name: cobertura de internal/profile
         run: go tool cover -func=coverage.out | grep -E 'internal/profile|^total'
 
+  # Sobe PostgreSQL real via testcontainers. Precisa de Docker, então roda só em
+  # Linux e separado do job rápido — quem contribui um perfil de nomenclatura
+  # não deveria depender deste job para ter retorno.
+  integration:
+    name: integration
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version: stable
+          check-latest: true
+      - run: make test-integration
+
   # Prova que o binário atravessa as plataformas sem cgo.
   crosscheck:
     name: cross-compile

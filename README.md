@@ -11,6 +11,7 @@
   <img src="https://img.shields.io/badge/go-1.25%2B-00ADD8?logo=go&logoColor=white" alt="Go 1.25+">
   <img src="https://img.shields.io/badge/postgres-13%2B-336791?logo=postgresql&logoColor=white" alt="PostgreSQL 13+">
   <img src="https://img.shields.io/badge/mode-read--only-2E7D32" alt="read-only">
+  <img src="https://img.shields.io/badge/license-Apache--2.0-555" alt="Apache-2.0">
 </p>
 
 <p align="center">
@@ -309,6 +310,5 @@ for other languages** and **real-world schemas for the benchmark corpus**.
 
 ## License
 
-To be decided before the first public artifact. Apache-2.0 is the likely choice, for the
-explicit patent grant that corporate legal teams look for before approving a tool into a
-pipeline.
+[Apache-2.0](LICENSE) — chosen for the explicit patent grant that corporate legal teams
+look for before approving a tool into a pipeline.

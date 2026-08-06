@@ -14,9 +14,14 @@ type Result struct {
 	ToolVersion   string    `json:"tool_version"`
 	GeneratedAt   time.Time `json:"generated_at"`
 
+	// ServerVersion is the PostgreSQL version analyzed. Whether a finding
+	// applies at all can depend on it.
+	ServerVersion string `json:"server_version,omitempty"`
+
 	// Profile is the naming profile in effect. An inference result is not
-	// interpretable without knowing which convention produced it.
-	Profile string `json:"profile"`
+	// interpretable without knowing which convention produced it. Empty for
+	// commands that make no inferences.
+	Profile string `json:"profile,omitempty"`
 
 	Schemas    []Schema    `json:"schemas"`
 	Candidates []Candidate `json:"candidates,omitempty"`
