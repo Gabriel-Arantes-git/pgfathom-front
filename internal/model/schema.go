@@ -9,33 +9,27 @@ type Schema struct {
 }
 
 // Table is a relation and everything the catalog says about it.
-//
-// ForeignKeys holds only DECLARED constraints. Inferred relationships live in
-// Candidate and never appear here, so that no consumer can mistake one for the
-// other.
 type Table struct {
 	Schema  string   `json:"schema"`
 	Name    string   `json:"name"`
 	Columns []Column `json:"columns"`
 
-	// PrimaryKey lists column names in key order. Empty when the table has none.
+	// PrimaryKey lists column names in key order. Empty when there is none.
 	PrimaryKey []string `json:"primary_key,omitempty"`
 
-	// Uniques lists unique constraints, each as an ordered set of column names.
 	Uniques [][]string `json:"uniques,omitempty"`
 
-	// ForeignKeys holds DECLARED constraints only.
+	// ForeignKeys holds DECLARED constraints only. Inferred relationships live
+	// in Candidate, so no consumer can mistake one for the other.
 	ForeignKeys []ForeignKey `json:"foreign_keys,omitempty"`
 
 	Indexes []Index    `json:"indexes,omitempty"`
 	Stats   TableStats `json:"stats"`
 
-	// Partitioned marks a partitioned parent. Statistics and counts behave
-	// differently here, and partitions must not be iterated separately.
+	// Partitioned marks a partitioned parent: read from it, never iterate the
+	// partitions, and expect statistics to behave differently.
 	Partitioned bool `json:"partitioned,omitempty"`
 
-	// Inherits marks a table participating in table inheritance. Rare, but
-	// present in old bases, and out of scope for single-column inference.
 	Inherits bool `json:"inherits,omitempty"`
 
 	Comment string `json:"comment,omitempty"`
@@ -44,8 +38,8 @@ type Table struct {
 // Ref returns the schema-qualified name.
 func (t Table) Ref() string { return t.Schema + "." + t.Name }
 
-// HasSingleColumnPK reports whether the table has a primary key of exactly one
-// column, which is the only shape single-column inference can target.
+// HasSingleColumnPK reports whether the primary key is exactly one column,
+// the only shape single-column inference can target.
 func (t Table) HasSingleColumnPK() bool { return len(t.PrimaryKey) == 1 }
 
 // Column looks up a column by name. The second result is false when absent.
@@ -58,8 +52,8 @@ func (t Table) Column(name string) (Column, bool) {
 	return Column{}, false
 }
 
-// IsIndexedLeading reports whether some index has the given column in leading
-// position, which is what makes it usable for a foreign key lookup.
+// IsIndexedLeading reports whether an index has the column in leading position,
+// which is what makes it usable for a foreign key lookup.
 func (t Table) IsIndexedLeading(column string) bool {
 	for _, idx := range t.Indexes {
 		if len(idx.Columns) > 0 && strings.EqualFold(idx.Columns[0], column) {
@@ -76,9 +70,8 @@ type Column struct {
 	// Type is the type as PostgreSQL formats it, e.g. "character varying(60)".
 	Type string `json:"type"`
 
-	// BaseType is the normalized type used for compatibility comparison,
-	// e.g. "int8". Comparing formatted types directly produces false negatives
-	// between equivalent spellings.
+	// BaseType is normalized for comparison, e.g. "int8". Comparing formatted
+	// types directly produces false negatives between equivalent spellings.
 	BaseType string `json:"base_type"`
 
 	Nullable bool   `json:"nullable"`
@@ -100,13 +93,8 @@ func (r ColumnRef) String() string { return r.Schema + "." + r.Table + "." + r.C
 // TableRef renders the owning table as schema.table.
 func (r ColumnRef) TableRef() string { return r.Schema + "." + r.Table }
 
-// ForeignKey is a constraint that EXISTS IN THE CATALOG.
-//
-// A declared foreign key is not automatically a guarantee of integrity. A
-// constraint created NOT VALID and never validated blocks new violations but
-// never checked the rows that were already there — it shows up in \d and draws
-// an arrow in any ERD tool while guaranteeing nothing about history. Validated
-// records that distinction and must never be dropped when reading the catalog.
+// ForeignKey is a constraint that exists in the catalog. That is not the same
+// as a guarantee of integrity: see Validated.
 type ForeignKey struct {
 	Name       string   `json:"name"`
 	Columns    []string `json:"columns"`
@@ -114,13 +102,13 @@ type ForeignKey struct {
 	RefTable   string   `json:"ref_table"`
 	RefColumns []string `json:"ref_columns"`
 
-	// Validated mirrors pg_constraint.convalidated. False means NOT VALID:
-	// pre-existing rows were never checked.
+	// Validated mirrors pg_constraint.convalidated. False means NOT VALID: the
+	// constraint blocks new violations but never checked the rows already
+	// there, while looking identical in \d and in any ERD tool.
 	Validated bool `json:"validated"`
 
-	// HasIndex reports whether a usable index exists on the child side. A
-	// foreign key without one turns every parent delete into a sequential scan
-	// of the child.
+	// HasIndex reports a usable index on the child side. Without one, every
+	// parent delete becomes a sequential scan of the child.
 	HasIndex bool `json:"has_index"`
 }
 

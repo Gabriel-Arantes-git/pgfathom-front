@@ -2,17 +2,12 @@ package model
 
 import "time"
 
-// SchemaVersion is the version of the JSON contract this build emits.
-//
-// The serialized model is the integration point with the CI baseline, with
-// later phases and with third-party tooling. It is a public API: any
-// incompatible change to field names or meanings requires incrementing this.
+// SchemaVersion is the version of the JSON contract this build emits. The
+// serialized model is a public API — the CI baseline and third-party tooling
+// consume it — so any incompatible change requires incrementing this.
 const SchemaVersion = "1"
 
 // Result is a complete analysis run.
-//
-// Coverage is a required field, not an optional decoration. There is no
-// constructor that produces a Result without it.
 type Result struct {
 	SchemaVersion string    `json:"schema_version"`
 	Tool          string    `json:"tool"`
@@ -20,7 +15,7 @@ type Result struct {
 	GeneratedAt   time.Time `json:"generated_at"`
 
 	// Profile is the naming profile in effect. An inference result is not
-	// interpretable without knowing which naming convention produced it.
+	// interpretable without knowing which convention produced it.
 	Profile string `json:"profile"`
 
 	Schemas    []Schema    `json:"schemas"`
@@ -31,8 +26,8 @@ type Result struct {
 }
 
 // NewResult starts a result with the contract fields filled in. Coverage is
-// required at construction so that no code path can produce a result that
-// reports nothing about what it failed to look at.
+// required at construction, so no code path can produce a result that says
+// nothing about what it failed to look at.
 func NewResult(toolVersion, profile string, generatedAt time.Time, coverage Coverage) *Result {
 	return &Result{
 		SchemaVersion: SchemaVersion,
@@ -44,8 +39,7 @@ func NewResult(toolVersion, profile string, generatedAt time.Time, coverage Cove
 	}
 }
 
-// CandidatesByVerdict returns the candidates carrying the given verdict, in the
-// order they were added.
+// CandidatesByVerdict returns candidates with the given verdict, in order.
 func (r *Result) CandidatesByVerdict(v Verdict) []Candidate {
 	var out []Candidate
 	for _, c := range r.Candidates {
@@ -65,8 +59,8 @@ func (r *Result) CountByVerdict() map[Verdict]int {
 	return out
 }
 
-// Sampled reports whether any validation in this run was sampled, which means
-// no result in it can be treated as confirmed.
+// Sampled reports whether any validation was sampled, in which case no result
+// in this run can be treated as confirmed.
 func (r *Result) Sampled() bool {
 	for _, c := range r.Candidates {
 		if c.Validation != nil && c.Validation.Method == MethodSampled {
