@@ -2,11 +2,10 @@
 // translate a schema's naming convention into entity names.
 //
 // The rules live in TOML, never in Go constants. This is the most fragile logic
-// in the project — a plural rule that is wrong produces a candidate that is
-// never generated and therefore never validated — and keeping it in data makes
-// it testable by table of cases rather than by code. It also turns what would
-// be a ceiling on adoption into the easiest contribution the project can offer:
-// teaching pgfathom a new language is a config file, not a patch.
+// in the project — a wrong plural rule produces a candidate that is never
+// generated and therefore never validated — and keeping it in data makes it
+// testable by table of cases. It also makes teaching pgfathom a new language a
+// config file rather than a patch.
 package profile
 
 import (
@@ -41,9 +40,9 @@ type Profile struct {
 	Name string `toml:"name"`
 
 	// ColumnSuffixes and ColumnPrefixes are reference affixes stripped from a
-	// column name to reveal the entity it points at. Order matters and the
-	// first match wins, so longer affixes must be declared before shorter ones
-	// they would shadow. Load enforces that.
+	// column name to reveal the entity it points at. First match wins, so
+	// longer affixes must precede shorter ones they would shadow; Validate
+	// enforces that.
 	ColumnSuffixes []string `toml:"column_suffixes"`
 	ColumnPrefixes []string `toml:"column_prefixes"`
 
@@ -51,8 +50,8 @@ type Profile struct {
 	TablePrefixes []string `toml:"table_prefixes"`
 
 	// Plural rules run from most specific to most generic. Unlike the affix
-	// lists, every applicable rule contributes a candidate form; order sets
-	// preference within the resulting set, not exclusivity.
+	// lists, every applicable rule contributes a form; order sets preference
+	// within the set, not exclusivity.
 	Plural []PluralRule `toml:"plural"`
 }
 
@@ -60,11 +59,8 @@ type Profile struct {
 // not a readable path.
 var ErrUnknownProfile = errors.New("unknown naming profile")
 
-// Load resolves a profile by embedded name or by file path.
-//
-// A bare name resolves against the embedded profiles without touching the
-// filesystem, which is what keeps the single-binary promise. Anything else is
-// treated as a path.
+// Load resolves a profile by embedded name or by file path. A bare name never
+// touches the filesystem, which is what keeps the single-binary promise.
 func Load(nameOrPath string) (*Profile, error) {
 	if nameOrPath == "" {
 		nameOrPath = DefaultName
@@ -119,12 +115,9 @@ func parse(data []byte, source string) (*Profile, error) {
 	return &p, nil
 }
 
-// Validate rejects a profile that would misbehave silently.
-//
-// Loading must never succeed with a partial or self-contradicting profile: a
-// naming profile that is quietly wrong produces candidates that are never
-// generated, and a candidate that is never generated is never validated and
-// never reported. The failure is invisible, which is why it is caught here.
+// Validate rejects a profile that would misbehave silently. A quietly wrong
+// profile produces candidates that are never generated, never validated and
+// never reported — an invisible failure, which is why it is caught at load.
 func (p *Profile) Validate() error {
 	if strings.TrimSpace(p.Name) == "" {
 		return errors.New("field \"name\" is required")
@@ -146,9 +139,8 @@ func (p *Profile) Validate() error {
 		}
 	}
 
-	// A suffix that shadows a longer one declared after it would silently win,
-	// stripping less than intended: with "cod" before "_cod", the column
-	// "pedido_cod" would yield "pedido_" instead of "pedido".
+	// With "cod" declared before "_cod", the column "pedido_cod" would yield
+	// "pedido_" instead of "pedido".
 	if err := checkSuffixOrder("column_suffixes", p.ColumnSuffixes); err != nil {
 		return err
 	}

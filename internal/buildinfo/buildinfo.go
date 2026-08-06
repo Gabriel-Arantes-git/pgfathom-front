@@ -12,9 +12,8 @@ var (
 
 const unknown = "unknown"
 
-// Resolve returns version, commit and build date, falling back to whatever the
-// Go toolchain recorded when the binary was built without ldflags — which is
-// what happens with `go install`, the most common way this will be installed.
+// Resolve returns version, commit and build date, falling back to what the Go
+// toolchain recorded when built without ldflags — the `go install` case.
 func Resolve() (version, commit, date string) {
 	version, commit, date = Version, Commit, Date
 

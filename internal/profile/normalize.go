@@ -2,14 +2,13 @@ package profile
 
 import "strings"
 
-// Origin records how a candidate form was derived from a table name. It is what
-// lets scoring tell an exact match from one obtained by aggressive
-// normalization — the difference between the SigExactName and SigNormalizedName
-// signals.
+// Origin records how a candidate form was derived, which is what lets scoring
+// tell an exact match from one obtained by aggressive normalization.
 type Origin uint8
 
+// Ordered from strongest to weakest match.
 const (
-	// OriginExact is the table name unchanged. The strongest match there is.
+	// OriginExact is the table name unchanged.
 	OriginExact Origin = iota
 
 	// OriginPrefixStripped had a legacy convention prefix removed.
@@ -18,8 +17,7 @@ const (
 	// OriginDepluralized had a plural rule applied.
 	OriginDepluralized
 
-	// OriginPrefixAndDepluralized had both. The weakest match, and the one most
-	// likely to be a coincidence.
+	// OriginPrefixAndDepluralized had both, and is the most likely coincidence.
 	OriginPrefixAndDepluralized
 )
 
@@ -49,16 +47,13 @@ type Form struct {
 	Origin Origin
 }
 
-// EntityName derives the entity a column appears to reference, by stripping the
-// reference affixes declared in the profile.
+// EntityName derives the entity a column appears to reference. Suffixes are
+// tried before prefixes, each in declared order with the first match winning.
+// A name matching no affix is returned unchanged: "municipio" references
+// municipio just as legitimately as "municipio_id" does.
 //
-// Suffixes are tried before prefixes, each list in declared order with the first
-// match winning. A column whose name matches no affix is returned unchanged: a
-// column called "municipio" references municipio just as legitimately as
-// "municipio_id" does.
-//
-// Comparison is case-insensitive and the result is lowercased, matching
-// PostgreSQL's own folding of unquoted identifiers.
+// The result is lowercased, matching PostgreSQL's folding of unquoted
+// identifiers.
 func (p *Profile) EntityName(column string) string {
 	name := strings.ToLower(strings.TrimSpace(column))
 	if name == "" {
@@ -82,20 +77,16 @@ func (p *Profile) EntityName(column string) string {
 	return strings.Trim(name, "_")
 }
 
-// TableForms returns the ordered set of candidate forms for a table name.
+// TableForms returns the ordered set of candidate forms for a table name, with
+// the unchanged name always first so an exact match wins.
 //
-// It returns a set rather than a single form on purpose. Portuguese plural rules
-// are genuinely ambiguous: "logins" yields "logim" under the ns→m rule, correct
-// for "armazens", and "login" under the generic drop-the-s rule, and nothing in
-// the name says which is right. Under first-rule-wins, whichever order was
-// chosen would silently decide which of the two cases the project gets wrong.
+// It returns a set rather than one form because plural rules are genuinely
+// ambiguous: "logins" yields "logim" under the ns→m rule, right for "armazens",
+// and "login" under the generic rule, and nothing in the name says which. Under
+// first-rule-wins, the chosen order would silently decide which case breaks.
 //
-// Returning every plausible form and letting the match decide costs a small set
-// per table and removes an entire class of order-dependent false negative. The
-// price is the occasional spurious match through an aggressive form, which
-// scoring penalizes and validation against the data knocks down.
-//
-// The original name always comes first, so an exact match is always preferred.
+// The price is the occasional spurious match through an aggressive form, which
+// scoring penalizes and validation knocks down.
 func (p *Profile) TableForms(table string) []Form {
 	name := strings.ToLower(strings.TrimSpace(table))
 	if name == "" {
@@ -118,8 +109,7 @@ func (p *Profile) TableForms(table string) []Form {
 
 	add(name, OriginExact)
 
-	// A table name carries at most one legacy prefix in practice, so the first
-	// match wins here.
+	// A table name carries at most one legacy prefix in practice.
 	stripped := ""
 	for _, prefix := range p.TablePrefixes {
 		if trimmed, ok := trimPrefix(name, prefix); ok {
@@ -141,8 +131,7 @@ func (p *Profile) TableForms(table string) []Form {
 	return forms
 }
 
-// depluralize applies every applicable plural rule, in declared order, and
-// returns each singular form produced.
+// depluralize applies every applicable rule and returns each form produced.
 func (p *Profile) depluralize(name string) []string {
 	out := make([]string, 0, 2)
 	for _, rule := range p.Plural {
@@ -151,7 +140,7 @@ func (p *Profile) depluralize(name string) []string {
 		}
 		stem := name[:len(name)-len(rule.Suffix)]
 		if stem == "" {
-			// The whole name is the plural suffix; stripping it says nothing.
+			// The whole name is the suffix; stripping it says nothing.
 			continue
 		}
 		out = append(out, stem+rule.Singular)
@@ -159,9 +148,8 @@ func (p *Profile) depluralize(name string) []string {
 	return out
 }
 
-// Match reports whether an entity name matches any form of a table name,
-// returning the form that matched. The first match wins, and because TableForms
-// puts the unchanged name first, an exact match always beats a normalized one.
+// Match reports whether an entity name matches any form of a table name, and
+// which form it was.
 func (p *Profile) Match(entity, table string) (Form, bool) {
 	entity = strings.ToLower(strings.TrimSpace(entity))
 	if entity == "" {

@@ -28,17 +28,11 @@ type UsageCounters struct {
 
 // UsageStats binds activity counters to the moment they started counting.
 //
-// A usage counter without its reset timestamp is not interpretable, and acting
-// on one is the most dangerous mistake this tool could make. The counters reset
-// on pg_stat_reset() and on pg_upgrade, and they are per node: a table read
-// exclusively on a read replica shows zero reads on the primary. "This table
-// has not been used in years" is not a conclusion these numbers can support on
-// their own.
-//
-// So the counters are unexported and the only way to obtain them is Counters,
-// which hands back the reset context in the same call. This is deliberate
-// friction: a caller cannot accidentally read SeqScans without being handed the
-// reason it might be lying.
+// The counters reset on pg_stat_reset() and pg_upgrade, and are per node: a
+// table read only on a replica shows zero reads on the primary. So they are
+// unexported, and Counters is the only way out — it hands back the reset
+// context in the same call, and a caller cannot read SeqScans without being
+// handed the reason it might be lying.
 type UsageStats struct {
 	counters   UsageCounters
 	resetAt    time.Time
@@ -50,15 +44,14 @@ func NewUsageStats(c UsageCounters, resetAt time.Time) UsageStats {
 	return UsageStats{counters: c, resetAt: resetAt, resetKnown: true}
 }
 
-// NewUsageStatsUnknownReset records counters whose reset moment could not be
-// determined. Callers must treat the counters as uninterpretable.
+// NewUsageStatsUnknownReset records counters whose reset moment is unknown.
 func NewUsageStatsUnknownReset(c UsageCounters) UsageStats {
 	return UsageStats{counters: c}
 }
 
-// Counters returns the activity counters together with the moment they started
-// counting. The third result is false when that moment is unknown, in which
-// case the counters carry no meaning and must not drive any finding.
+// Counters returns the activity counters and the moment they started counting.
+// The third result is false when that moment is unknown, in which case the
+// counters carry no meaning and must not drive a finding.
 func (u UsageStats) Counters() (UsageCounters, time.Time, bool) {
 	return u.counters, u.resetAt, u.resetKnown
 }
@@ -71,9 +64,9 @@ type usageStatsJSON struct {
 	ResetAt  *time.Time    `json:"stats_reset_at"`
 }
 
-// MarshalJSON always emits the reset moment alongside the counters, so the
-// serialized form carries the same warning the Go API does. A null reset means
-// the counters are not interpretable.
+// MarshalJSON emits the reset moment alongside the counters, so the serialized
+// form carries the same caveat the Go API does. A null reset means the counters
+// are not interpretable.
 func (u UsageStats) MarshalJSON() ([]byte, error) {
 	out := usageStatsJSON{Counters: u.counters}
 	if u.resetKnown {
@@ -99,24 +92,19 @@ func (u *UsageStats) UnmarshalJSON(b []byte) error {
 }
 
 // ColumnStats is planner statistics for one column, used to reject impossible
-// candidates before any table I/O happens.
-//
-// The histogram bounds and most common values in pg_stats ARE user data. They
-// live in unexported fields so that encoding/json cannot reach them, they never
-// appear in any output, log or error, and they exist only long enough to
-// produce a number.
+// candidates before any table I/O.
 type ColumnStats struct {
 	// NullFraction is the estimated proportion of NULLs, 0..1.
 	NullFraction float64 `json:"null_fraction"`
 
-	// NDistinct follows the pg_stats convention: a positive value is an
-	// absolute count, a negative value is a ratio of the table's row count,
-	// and zero means unknown. Use EstimatedDistinct to resolve it.
+	// NDistinct follows the pg_stats convention: positive is an absolute count,
+	// negative is a ratio of the row count, zero is unknown. See
+	// EstimatedDistinct.
 	NDistinct float64 `json:"n_distinct"`
 
 	// Present is false when the column has no statistics at all, typically
-	// because the table was never ANALYZEd. The prefilter must stay silent in
-	// that case rather than invent a rejection.
+	// because the table was never ANALYZEd. The prefilter must then stay silent
+	// rather than invent a rejection.
 	Present bool `json:"present"`
 
 	hasBounds bool
@@ -124,17 +112,15 @@ type ColumnStats struct {
 	highBound string
 }
 
-// SetBounds records the histogram endpoints. The values are user data: they are
-// stored unexported, are never serialized, and must never reach any output.
+// SetBounds records the histogram endpoints. They are user data, so they stay
+// unexported and never reach any output.
 func (c *ColumnStats) SetBounds(low, high string) {
 	c.hasBounds, c.lowBound, c.highBound = true, low, high
 }
 
-// HasBounds reports whether histogram endpoints are available. It deliberately
-// exposes the availability, never the values: there is no exported accessor for
-// the bounds themselves and there must not be one. The typed range comparison
-// that consumes them belongs inside this package, so the values never cross the
-// boundary.
+// HasBounds reports whether histogram endpoints are available. There is no
+// exported accessor for the values themselves and there must not be one; the
+// typed range comparison belongs inside this package.
 func (c ColumnStats) HasBounds() bool { return c.hasBounds }
 
 // EstimatedDistinct resolves the pg_stats n_distinct convention against a row
