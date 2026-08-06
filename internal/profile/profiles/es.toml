@@ -1,0 +1,47 @@
+# Perfil de nomenclatura para esquemas en español.
+#
+# Los identificadores de base de datos suelen ser ASCII: `articulos` es mucho
+# más común que `artículos`. Ambas formas deben estar cubiertas.
+
+name = "es"
+
+column_suffixes = ["_codigo", "_id", "_cod", "_clave", "_ref", "_fk", "id", "cod"]
+column_prefixes = ["id_", "cod_", "fk_"]
+table_prefixes  = ["tbl_", "tb_", "sys_", "cat_"]
+
+[[plural]]          # camiones → camion
+suffix   = "ones"
+singular = "on"
+
+[[plural]]          # ingleses → ingles
+suffix   = "eses"
+singular = "es"
+
+[[plural]]          # luces → luz
+suffix   = "ces"
+singular = "z"
+
+[[plural]]          # meses → mes
+suffix   = "ses"
+singular = "s"
+
+[[plural]]          # papeles → papel
+suffix   = "les"
+singular = "l"
+
+[[plural]]          # mujeres → mujer
+suffix   = "res"
+singular = "r"
+
+[[plural]]          # ciudades → ciudad
+suffix   = "des"
+singular = "d"
+
+[[plural]]          # planes → plan
+suffix   = "nes"
+singular = "n"
+
+# Genérica, siempre al final.
+[[plural]]          # clientes → cliente
+suffix   = "s"
+singular = ""

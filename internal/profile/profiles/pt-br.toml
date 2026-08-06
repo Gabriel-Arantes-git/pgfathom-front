@@ -1,0 +1,78 @@
+# Perfil de nomenclatura para bancos em português do Brasil.
+#
+# Identificador de banco é quase sempre ASCII: uma tabela `opcoes` é muito mais
+# comum na base alvo do que `opções`. As duas formas precisam estar cobertas.
+#
+# Regras de plural são declaradas da mais específica para a mais genérica, e a
+# queda genérica de `s` fica sempre por último. A ordem não é exclusiva: toda
+# regra aplicável contribui uma forma candidata, e a ordem determina a
+# preferência dentro do conjunto.
+
+name = "pt-br"
+
+# Do mais longo para o mais curto: `_cod` precisa vencer `cod`.
+column_suffixes = ["_codigo", "_id", "_cod", "_key", "_ref", "_fk", "id", "cod"]
+column_prefixes = ["id_", "cod_", "fk_"]
+table_prefixes  = ["tbl_", "tb_", "sys_", "cad_", "mov_"]
+
+[[plural]]          # opções → opção
+suffix   = "ões"
+singular = "ão"
+
+[[plural]]          # opcoes → opcao
+suffix   = "oes"
+singular = "ao"
+
+[[plural]]          # pães → pão
+suffix   = "ães"
+singular = "ão"
+
+[[plural]]          # paes → pao
+suffix   = "aes"
+singular = "ao"
+
+[[plural]]          # animais → animal
+suffix   = "ais"
+singular = "al"
+
+[[plural]]          # papéis → papel
+suffix   = "éis"
+singular = "el"
+
+[[plural]]          # responsaveis → responsavel
+suffix   = "eis"
+singular = "el"
+
+[[plural]]          # lençóis → lençol
+suffix   = "óis"
+singular = "ol"
+
+[[plural]]          # lencois → lencol
+suffix   = "ois"
+singular = "ol"
+
+[[plural]]          # azuis → azul
+suffix   = "uis"
+singular = "ul"
+
+[[plural]]          # perfis → perfil
+suffix   = "is"
+singular = "il"
+
+[[plural]]          # armazens → armazem
+suffix   = "ns"
+singular = "m"
+
+[[plural]]          # mulheres → mulher
+suffix   = "res"
+singular = "r"
+
+[[plural]]          # meses → mes
+suffix   = "ses"
+singular = "s"
+
+# Genérica, sempre por último. Cobre também órgãos → órgão e mãos → mão,
+# porque a queda do `s` já produz a forma correta nesses casos.
+[[plural]]          # clientes → cliente
+suffix   = "s"
+singular = ""

@@ -1,0 +1,214 @@
+// Package profile loads naming profiles: the affix and plural rules that
+// translate a schema's naming convention into entity names.
+//
+// The rules live in TOML, never in Go constants. This is the most fragile logic
+// in the project — a plural rule that is wrong produces a candidate that is
+// never generated and therefore never validated — and keeping it in data makes
+// it testable by table of cases rather than by code. It also turns what would
+// be a ceiling on adoption into the easiest contribution the project can offer:
+// teaching pgfathom a new language is a config file, not a patch.
+package profile
+
+import (
+	"embed"
+	"errors"
+	"fmt"
+	"os"
+	"path"
+	"sort"
+	"strings"
+
+	"github.com/pelletier/go-toml/v2"
+)
+
+//go:embed profiles/*.toml
+var embedded embed.FS
+
+const embeddedDir = "profiles"
+
+// DefaultName is the profile used when none is requested. The target audience
+// for this tool runs Portuguese-language schemas.
+const DefaultName = "pt-br"
+
+// PluralRule turns a plural suffix into its singular form.
+type PluralRule struct {
+	Suffix   string `toml:"suffix"`
+	Singular string `toml:"singular"`
+}
+
+// Profile is a set of naming conventions.
+type Profile struct {
+	Name string `toml:"name"`
+
+	// ColumnSuffixes and ColumnPrefixes are reference affixes stripped from a
+	// column name to reveal the entity it points at. Order matters and the
+	// first match wins, so longer affixes must be declared before shorter ones
+	// they would shadow. Load enforces that.
+	ColumnSuffixes []string `toml:"column_suffixes"`
+	ColumnPrefixes []string `toml:"column_prefixes"`
+
+	// TablePrefixes are legacy convention prefixes stripped from table names.
+	TablePrefixes []string `toml:"table_prefixes"`
+
+	// Plural rules run from most specific to most generic. Unlike the affix
+	// lists, every applicable rule contributes a candidate form; order sets
+	// preference within the resulting set, not exclusivity.
+	Plural []PluralRule `toml:"plural"`
+}
+
+// ErrUnknownProfile is returned when a name matches no embedded profile and is
+// not a readable path.
+var ErrUnknownProfile = errors.New("unknown naming profile")
+
+// Load resolves a profile by embedded name or by file path.
+//
+// A bare name resolves against the embedded profiles without touching the
+// filesystem, which is what keeps the single-binary promise. Anything else is
+// treated as a path.
+func Load(nameOrPath string) (*Profile, error) {
+	if nameOrPath == "" {
+		nameOrPath = DefaultName
+	}
+
+	if !strings.ContainsAny(nameOrPath, `/\.`) {
+		return Embedded(nameOrPath)
+	}
+	return LoadFile(nameOrPath)
+}
+
+// Embedded returns one of the profiles compiled into the binary.
+func Embedded(name string) (*Profile, error) {
+	data, err := embedded.ReadFile(path.Join(embeddedDir, name+".toml"))
+	if err != nil {
+		return nil, fmt.Errorf("%w: %q (available: %s)", ErrUnknownProfile, name, strings.Join(Names(), ", "))
+	}
+	return parse(data, "embedded:"+name)
+}
+
+// LoadFile reads a profile from disk.
+func LoadFile(filePath string) (*Profile, error) {
+	data, err := os.ReadFile(filePath)
+	if err != nil {
+		return nil, fmt.Errorf("reading naming profile: %w", err)
+	}
+	return parse(data, filePath)
+}
+
+// Names lists the embedded profiles, sorted.
+func Names() []string {
+	entries, err := embedded.ReadDir(embeddedDir)
+	if err != nil {
+		return nil
+	}
+	names := make([]string, 0, len(entries))
+	for _, e := range entries {
+		names = append(names, strings.TrimSuffix(e.Name(), ".toml"))
+	}
+	sort.Strings(names)
+	return names
+}
+
+func parse(data []byte, source string) (*Profile, error) {
+	var p Profile
+	if err := toml.Unmarshal(data, &p); err != nil {
+		return nil, fmt.Errorf("parsing naming profile %s: %w", source, err)
+	}
+	if err := p.Validate(); err != nil {
+		return nil, fmt.Errorf("invalid naming profile %s: %w", source, err)
+	}
+	return &p, nil
+}
+
+// Validate rejects a profile that would misbehave silently.
+//
+// Loading must never succeed with a partial or self-contradicting profile: a
+// naming profile that is quietly wrong produces candidates that are never
+// generated, and a candidate that is never generated is never validated and
+// never reported. The failure is invisible, which is why it is caught here.
+func (p *Profile) Validate() error {
+	if strings.TrimSpace(p.Name) == "" {
+		return errors.New("field \"name\" is required")
+	}
+	if len(p.Plural) == 0 {
+		return errors.New("at least one plural rule is required")
+	}
+
+	for _, set := range []struct {
+		field string
+		items []string
+	}{
+		{"column_suffixes", p.ColumnSuffixes},
+		{"column_prefixes", p.ColumnPrefixes},
+		{"table_prefixes", p.TablePrefixes},
+	} {
+		if err := checkNoDuplicates(set.field, set.items); err != nil {
+			return err
+		}
+	}
+
+	// A suffix that shadows a longer one declared after it would silently win,
+	// stripping less than intended: with "cod" before "_cod", the column
+	// "pedido_cod" would yield "pedido_" instead of "pedido".
+	if err := checkSuffixOrder("column_suffixes", p.ColumnSuffixes); err != nil {
+		return err
+	}
+	if err := checkPrefixOrder("column_prefixes", p.ColumnPrefixes); err != nil {
+		return err
+	}
+	if err := checkPrefixOrder("table_prefixes", p.TablePrefixes); err != nil {
+		return err
+	}
+
+	seen := make(map[string]struct{}, len(p.Plural))
+	for i, r := range p.Plural {
+		if r.Suffix == "" {
+			return fmt.Errorf("plural rule %d: suffix must not be empty", i+1)
+		}
+		if _, dup := seen[r.Suffix]; dup {
+			return fmt.Errorf("plural rule %d: duplicate suffix %q", i+1, r.Suffix)
+		}
+		seen[r.Suffix] = struct{}{}
+	}
+
+	return nil
+}
+
+func checkNoDuplicates(field string, items []string) error {
+	seen := make(map[string]struct{}, len(items))
+	for _, it := range items {
+		if it == "" {
+			return fmt.Errorf("%s: empty entry", field)
+		}
+		if _, dup := seen[it]; dup {
+			return fmt.Errorf("%s: duplicate entry %q", field, it)
+		}
+		seen[it] = struct{}{}
+	}
+	return nil
+}
+
+func checkSuffixOrder(field string, items []string) error {
+	for i, short := range items {
+		for _, long := range items[i+1:] {
+			if len(long) > len(short) && strings.HasSuffix(long, short) {
+				return fmt.Errorf(
+					"%s: %q is declared before %q and would shadow it; declare the longer affix first",
+					field, short, long)
+			}
+		}
+	}
+	return nil
+}
+
+func checkPrefixOrder(field string, items []string) error {
+	for i, short := range items {
+		for _, long := range items[i+1:] {
+			if len(long) > len(short) && strings.HasPrefix(long, short) {
+				return fmt.Errorf(
+					"%s: %q is declared before %q and would shadow it; declare the longer affix first",
+					field, short, long)
+			}
+		}
+	}
+	return nil
+}
