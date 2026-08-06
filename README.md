@@ -1,78 +1,291 @@
-# pgfathom
+<p align="center">
+  <img src="assets/logo.png" alt="pgfathom" width="440">
+</p>
 
-Sound the depth of a legacy PostgreSQL schema.
+<p align="center">
+  <strong>Sound the depth of a legacy PostgreSQL schema.</strong>
+</p>
 
-`pgfathom` discovers the relationships your database has but never declared — and proves them against the data instead of guessing from column names.
+<p align="center">
+  <img src="https://img.shields.io/badge/status-pre--release-E04A3F" alt="status: pre-release">
+  <img src="https://img.shields.io/badge/go-1.25%2B-00ADD8?logo=go&logoColor=white" alt="Go 1.25+">
+  <img src="https://img.shields.io/badge/postgres-13%2B-336791?logo=postgresql&logoColor=white" alt="PostgreSQL 13+">
+  <img src="https://img.shields.io/badge/mode-read--only-2E7D32" alt="read-only">
+</p>
 
-> **Status: pre-release.** Nothing is implemented yet. The design is specified in
-> [`docs/PGFATHOM.md`](docs/PGFATHOM.md). Recovery-rate benchmarks will be
-> published here once the MVP runs against the reference corpus.
+<p align="center">
+  <a href="#the-problem">Problem</a> ·
+  <a href="#what-it-does">What it does</a> ·
+  <a href="#safety">Safety</a> ·
+  <a href="#how-it-works">How it works</a> ·
+  <a href="#prior-art">Prior art</a> ·
+  <a href="#roadmap">Roadmap</a>
+</p>
+
+---
+
+`pgfathom` finds the relationships your database has but never declared — and proves them against the data instead of guessing from column names.
+
+> [!IMPORTANT]
+> **Pre-release. No code yet.**
+> The design is complete and specified in [`docs/PGFATHOM.md`](docs/PGFATHOM.md); the
+> implementation plan is in [`docs/ROADMAP.md`](docs/ROADMAP.md). Terminal output shown
+> below is the target design, not a recording. Recovery-rate benchmarks will be published
+> here once the tool runs against the reference corpus — no numbers are claimed until then.
 
 ---
 
 ## The problem
 
-Old PostgreSQL databases carry more structure than they declare. `pedido.cliente_id`
-points at `cliente.id` in every single row, but no constraint says so — the ORM of the
-day never created it, or someone dropped constraints for a bulk load and never put them
-back.
+Old PostgreSQL databases carry more structure than they declare.
 
-Two things follow. Nobody can read the model, because `\d` shows no relationships at all.
-And because the constraint was never there, nothing ever stopped orphan rows from getting
-in — so they probably already did, years ago, silently.
+```
+=# \d pedido
+      Column     |  Type  | Nullable
+-----------------+--------+----------
+ id              | bigint | not null
+ cliente_id      | bigint | not null
+ ...
+Indexes:
+    "pedido_pkey" PRIMARY KEY, btree (id)
+```
 
-There is a nastier variant: a foreign key can be declared and still guarantee nothing,
-if it was created `NOT VALID` and never validated. It shows up in `\d`, it draws an arrow
-in your ERD tool, and it never checked a single pre-existing row.
+No foreign keys. But `cliente_id` points at `cliente.id` in every single row — the ORM of
+the day never created the constraint, or someone dropped constraints for a bulk load and
+never put them back.
+
+Two things follow. Nobody can read the model, because `\d` shows nothing and your ERD tool
+draws a page of disconnected boxes. And because the constraint was never there, nothing
+ever stopped orphan rows from getting in — so they probably already did, years ago,
+silently, and no one has looked.
+
+There is a nastier variant. A foreign key can be *declared* and still guarantee nothing, if
+it was created `NOT VALID` and never validated. It shows up in `\d`. It draws an arrow in
+your diagram. It never checked a single pre-existing row.
 
 ## What it does
 
-`pgfathom` reads the system catalog, mines join predicates out of view and function
-definitions, filters candidates against planner statistics, and then validates what
-survives with an anti-join against the real data.
+```console
+$ pgfathom discover --schema public
+```
 
-Every relationship it reports comes with the evidence behind it: containment by row and
-by distinct value, orphan counts, and cardinality. Relationships fall into three buckets
-that need three different responses — a forgotten but intact foreign key, a real
-relationship with broken integrity, or a name coincidence.
+```
+  profile pt-br · sampled validation (100k rows/table) · 312 tables
 
-The second bucket is the point of the tool. It is a data bug that has been in production
-for years and nobody knows.
+  BROKEN — the relationship is real, the integrity is not
+  ──────────────────────────────────────────────────────────────────────────
+  os_servico.resp_tecnico    → funcionario.id      99.7%    1,284 orphans
+  pedido.cliente_id          → cliente.id          99.9%       37 orphans
+  lancamento.conta_id        → conta.id            94.2%   11,903 orphans
 
-Output is a terminal report, a versioned JSON model, and reviewable `.sql` artifacts.
+  CONFIRMED — undeclared foreign key, no orphans found
+  ──────────────────────────────────────────────────────────────────────────
+  item_pedido.pedido_id      → pedido.id          100.0%        0 orphans
+  endereco.municipio_id      → municipio.id       100.0%        0 orphans
 
-## Guarantees
+  WEAK — insufficient evidence to conclude
+  ──────────────────────────────────────────────────────────────────────────
+  documento.entidade_id      → entidade.id         41.0%   polymorphic pair
+                                                            detected
 
-**Read-only.** `pgfathom` never issues a statement that modifies the database under
-analysis. It emits `.sql` files for you to review and run yourself.
+  312 tables · 298 analyzed · 14 skipped (no SELECT privilege)
+  1,847 candidates · 226 validated · 3 timed out
 
-**Your data never leaves memory.** The tool reads values to compare keys. What comes out
-of it are counts, ratios, and object names — never a value from your tables, in any
-output, log, or JSON field. The target use case includes public-sector databases holding
-national ID numbers, health records, and taxpayer data.
+  ! sampled run — nothing here is confirmed. orphan rows cluster on disk, which is
+    exactly what page-level sampling is worst at finding. re-run with --full to prove
+    absence.
+```
 
-**No claim without evidence.** Every inferred relationship carries a verdict and the
-metric backing it. Sampled runs can never report a confirmed relationship — orphan rows
-cluster on disk, which is exactly the pattern page-level sampling is worst at finding.
+Three verdicts, three different responses.
+
+**Broken** is the point of the tool. It is a data bug that has been in production for years
+and nobody knows. `pgfathom` writes you the query that lists the orphans, because they have
+to be resolved before any constraint can be added.
+
+**Confirmed** is a foreign key someone forgot to declare. You get the DDL, with the
+`VALIDATE CONSTRAINT` split out so the initial `ALTER TABLE` doesn't hold a heavy lock —
+plus the `CREATE INDEX CONCURRENTLY` on the child column when it's missing, because an
+unindexed FK child is a classic delete trap.
+
+**Weak** and **rejected** are reported too, so you never wonder why an obvious-looking
+column was ignored.
+
+Note the first row: `os_servico.resp_tecnico → funcionario.id`. No name-matching heuristic
+in the world finds that one — `resp_tecnico` looks nothing like `funcionario`. `pgfathom`
+finds it by reading the join predicates out of your own view and function definitions.
+
+Output comes as a terminal report, a versioned JSON model, and reviewable `.sql` artifacts.
+
+## Safety
+
+This tool is designed to be pointed at a production database owned by someone who is
+nervous about it. Every guarantee below is a hard requirement in the spec, not a goal.
+
+**Read-only, structurally.** `pgfathom` never issues a statement that modifies the database
+under analysis — there is no write mode, under any flag, in any phase. The session sets
+`default_transaction_read_only`, and a read-only role is documented as the recommended
+setup. It emits `.sql` files for you to review and run yourself. Nothing generated is meant
+to be executed unreviewed.
+
+**Your data never leaves memory.** The tool reads values to compare keys. What comes *out*
+of it are counts, ratios, and object names — never a value from your tables, in any output,
+log, JSON field, or error message. This is enforced by a test that serializes every
+structure and scans the result, not by code review. The target use case includes
+public-sector databases holding national ID numbers, health records, and taxpayer data.
+
+**It won't take your server down.** Every validation query runs under `statement_timeout`,
+`lock_timeout`, and `idle_in_transaction_session_timeout`. Concurrency is capped and
+configurable, defaulting low. The connection announces itself as `pgfathom` in
+`pg_stat_activity` so your DBA can see exactly what is running. A candidate that times out
+is recorded as unvalidated and the run continues.
+
+**No claim without evidence.** Every inferred relationship carries a verdict and the metric
+behind it. Sampled runs can never report a *confirmed* relationship — only `--full` can
+prove absence of orphans.
 
 **Silence is never reported as a clean bill of health.** Tables skipped for missing
 privileges, candidates that timed out, schemas not covered — all of it appears in the
-coverage block on every run.
+coverage block on every run. A clean report means "I looked and it's clean", never "I
+couldn't look".
+
+**Small dependency tree, on purpose.** Four dependencies in the binary. No cgo. The person
+who has to approve running this against production will open `go.mod` first, and we intend
+that to be a short read.
+
+## How it works
+
+```
+catalog  →  usage evidence  →  candidates  →  scoring  →  stats prefilter  →  validation
+```
+
+1. **Read the catalog.** Tables, columns, keys, indexes, comments, declared foreign keys
+   *and their validation state*, usage statistics with their reset timestamp.
+
+2. **Mine usage evidence.** Join predicates extracted from view definitions, function
+   bodies, and — when available — `pg_stat_statements`. A view that joins two columns is
+   proof that your code treats them as related, whatever they happen to be named. This is
+   pure catalog: no user data, no cost, and it finds relationships name matching
+   structurally cannot.
+
+3. **Generate candidates.** Column-name affixes are stripped and matched against
+   depluralized table names using a **naming profile** — a config file, not hardcoded
+   rules. Ships with `pt-br`, `en`, and `es`.
+
+4. **Score on metadata alone.** Exact name match, type identity, target ambiguity, existing
+   index, comment mentions. Weak candidates are dropped before anything touches data.
+
+5. **Prefilter on planner statistics.** If the child column has more distinct values than
+   the parent has rows, full containment is arithmetically impossible. Free, from
+   `pg_stats`, no I/O.
+
+6. **Validate against the data.** One aggregate per surviving candidate — never fetching
+   rows, only counts. Containment is reported in two dimensions, by row and by distinct
+   value, because a single bad value repeated a million times and a million rare bad values
+   are different problems.
+
+## Naming profiles
+
+Most schema tools assume English. The databases that need this tool most often aren't.
+
+Affix and plural rules live in TOML, not in Go, so teaching `pgfathom` a new convention is
+a config file rather than a patch:
+
+```toml
+name = "pt-br"
+
+column_suffixes = ["_id", "_codigo", "_cod", "_key", "_ref", "_fk"]
+table_prefixes  = ["tb_", "tbl_", "sys_", "cad_", "mov_"]
+
+[[plural]]                     # opcoes → opcao
+suffix = "oes"
+singular = "ao"
+
+[[plural]]                     # animais → animal
+suffix = "ais"
+singular = "al"
+```
+
+Normalization returns a *set* of candidate forms rather than one, so ambiguous plurals
+(`logins` → `logim`? `login`?) cost nothing in recall — every form is tried, and the one
+that matched is reported so scoring can tell an exact match from an aggressive one.
+
+**Adding a profile for your language is the easiest possible contribution.** It needs no
+knowledge of the rest of the codebase — a TOML file and a table of test cases.
 
 ## Prior art
 
-Containment is known in the data-profiling literature as an *inclusion dependency*, and
-there is a mature body of work on discovering them — SPIDER, BINDER, MIND, all implemented
-in [Metanome](https://hpi.de/naumann/projects/repeatability/data-profiling/metanome-ind-algorithms.html).
+`pgfathom` is not new science, and says so.
+
+Containment is known in the data-profiling literature as an **inclusion dependency** — the
+automatically testable part of a foreign key. There is a mature body of algorithms for
+discovering them (SPIDER, BINDER, MIND), implemented in
+[Metanome](https://hpi.de/naumann/projects/repeatability/data-profiling/metanome-ind-algorithms.html).
 Commercial GUI modelers such as Hackolade infer relationships from metadata.
 [Azimutt](https://github.com/azimuttapp/azimutt) flags `_id` columns without declared
 relations as part of its schema analysis.
 
-`pgfathom` is not new science. It is the part nobody packaged: a native PostgreSQL CLI
-that validates inference against the actual data, mines evidence from the catalog itself,
-speaks the naming conventions of legacy schemas in languages other than English, and hands
-you DDL you can review.
+What none of them is: a native PostgreSQL CLI that validates its inferences against the
+actual data, mines evidence from the catalog itself, speaks the naming conventions of
+non-English legacy schemas, reports its own coverage honestly, and hands you DDL you can
+review.
+
+`pgfathom` deliberately does *not* compete with the tools that already solved their
+problems well — [Squawk](https://squawkhq.com/) for migration linting,
+[Atlas](https://atlasgo.io/) for drift, [SchemaSpy](https://schemaspy.org/) and Azimutt for
+diagrams, [sqlc](https://sqlc.dev/) and [jOOQ](https://www.jooq.org/) for code generation.
+The versioned JSON model is the integration point: consume it and generate whatever you
+like from a schema that finally knows its own relationships.
+
+## Roadmap
+
+| Phase | Capability | Status |
+|---|---|---|
+| 1 | Core model and naming profiles | Specified |
+| 2 | Catalog inspection · `pgfathom audit` | Planned |
+| 3 | Name-based candidate inference | Planned |
+| 4 | Planner-statistics prefilter | Planned |
+| 5 | Data validation · `pgfathom discover` | Planned |
+| 6 | Join mining from views and functions | Planned |
+| 7 | Terminal, JSON and SQL output | Planned |
+| 8 | Benchmark corpus and release | Planned |
+
+Full detail in [`docs/ROADMAP.md`](docs/ROADMAP.md).
+
+**After v0.1:** `pgfathom check --baseline` for CI — fail the build when a new undeclared
+relationship appears or an orphan count grows. Then structural findings, cross-cutting
+patterns (tenant columns, polymorphic pairs), and DBML/Mermaid/PlantUML export.
+
+Code generation is explicitly *not* on the roadmap.
+
+## How correctness is measured
+
+The headline metric is **recovery rate**: take a schema with complete foreign keys, drop
+every one of them, run `pgfathom`, and count how many come back.
+
+This runs against a public corpus — GitLab, Odoo, Discourse, Redmine, Mastodon — so anyone
+can reproduce it. Results will be published per schema, split into what name matching
+recovers alone versus what usage evidence adds on top.
+
+Recall will settle well below 100%, and that is expected rather than a failure:
+relationships whose column names bear no resemblance to the target table are invisible to
+name matching by construction. That gap is precisely what join mining exists to close, and
+reporting the split is how you can see it working.
+
+The metric that has no tolerance is the other one: **zero confirmed false positives.** A
+missed relationship costs you a finding. A wrong one confirmed costs you the tool.
+
+## Contributing
+
+Not open for code contributions yet — there is no code. The design is, though, and it is
+the cheapest moment to change it. If you have run into this problem on a real legacy
+database, [open an issue](../../issues): what the schema looked like, what naming
+convention it used, and what a tool would have needed to find.
+
+Once implementation starts, the two most valuable contributions will be **naming profiles
+for other languages** and **real-world schemas for the benchmark corpus**.
 
 ## License
 
-TBD.
+To be decided before the first public artifact. Apache-2.0 is the likely choice, for the
+explicit patent grant that corporate legal teams look for before approving a tool into a
+pipeline.

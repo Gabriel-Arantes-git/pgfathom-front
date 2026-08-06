@@ -8,7 +8,7 @@ Ferramenta de linha de comando para sondagem de schema PostgreSQL. Mede a profun
 
 ## Como usar este documento
 
-Este arquivo é a fonte de verdade do projeto e serve como contexto permanente para desenvolvimento assistido. Antes de implementar qualquer coisa, consulte a seção correspondente aqui. Se uma decisão de implementação contradiz este documento, o documento vence, ou o documento precisa ser atualizado primeiro.
+Este arquivo é a fonte de verdade do projeto e serve como contexto permanente para desenvolvimento. Antes de implementar qualquer coisa, consulte a seção correspondente aqui. Se uma decisão de implementação contradiz este documento, o documento vence, ou o documento precisa ser atualizado primeiro.
 
 ### Regras invioláveis
 
@@ -341,7 +341,7 @@ Para cada coluna que não seja chave primária da própria tabela e que não par
 
 Normalização do nome da coluna. Remover sufixos de referência, na ordem: `_id`, `_codigo`, `_cod`, `_key`, `_ref`, `_fk`, `id`, `cod`. Remover prefixos: `id_`, `cod_`, `fk_`. O resultado é o candidato a nome de entidade.
 
-Normalização do nome da tabela. Remover prefixos comuns de convenção antiga: `tb_`, `tbl_`, `sys_`, `cad_`, `mov_`. Aplicar despluralização. Guardar tanto a forma original quanto a normalizada e casar contra ambas.
+Normalização do nome da tabela. Remover prefixos comuns de convenção antiga: `tb_`, `tbl_`, `sys_`, `cad_`, `mov_`. Aplicar despluralização. O resultado é um **conjunto ordenado de formas candidatas**, sempre incluindo o nome original inalterado, e o casamento tem sucesso quando qualquer forma casa — ver a seção de perfis para o porquê.
 
 Todas essas regras — sufixos, prefixos, plural — vêm de um **perfil de nomenclatura** carregado de arquivo, nunca de constante em código. Ver a seção dedicada.
 
@@ -470,32 +470,83 @@ column_suffixes = ["_id", "_codigo", "_cod", "_key", "_ref", "_fk", "id", "cod"]
 column_prefixes = ["id_", "cod_", "fk_"]
 table_prefixes  = ["tb_", "tbl_", "sys_", "cad_", "mov_"]
 
-[[plural]]
+# Identificador de banco é quase sempre ASCII: `opcoes` é muito
+# mais comum que `opções`. As duas formas precisam estar cobertas.
+
+[[plural]]                      # opções → opção
 suffix = "ões"
 singular = "ão"
 
-[[plural]]
+[[plural]]                      # opcoes → opcao
+suffix = "oes"
+singular = "ao"
+
+[[plural]]                      # pães → pão
 suffix = "ães"
 singular = "ão"
 
-[[plural]]
+[[plural]]                      # paes → pao
+suffix = "aes"
+singular = "ao"
+
+[[plural]]                      # animais → animal
+suffix = "ais"
+singular = "al"
+
+[[plural]]                      # papéis → papel
+suffix = "éis"
+singular = "el"
+
+[[plural]]                      # responsaveis → responsavel
+suffix = "eis"
+singular = "el"
+
+[[plural]]                      # lençóis → lençol
+suffix = "óis"
+singular = "ol"
+
+[[plural]]                      # lencois → lencol
+suffix = "ois"
+singular = "ol"
+
+[[plural]]                      # azuis → azul
+suffix = "uis"
+singular = "ul"
+
+[[plural]]                      # perfis → perfil
 suffix = "is"
 singular = "il"
 
-[[plural]]
+[[plural]]                      # armazens → armazem
+suffix = "ns"
+singular = "m"
+
+[[plural]]                      # mulheres → mulher
 suffix = "res"
 singular = "r"
 
-[[plural]]
+[[plural]]                      # meses → mes
 suffix = "ses"
 singular = "s"
 
-[[plural]]
+[[plural]]                      # clientes → cliente
 suffix = "s"
 singular = ""
 ```
 
-Ordem importa: as regras são aplicadas na ordem declarada, e a primeira que casa vence. A regra genérica de `s` fica sempre por último.
+### A normalização devolve um conjunto, não uma string
+
+Esta é a decisão que evita uma classe inteira de falso negativo, e ela é contra-intuitiva o suficiente para merecer o registro.
+
+O caminho óbvio seria aplicar as regras na ordem e devolver a primeira que casa. Isso quebra em ambiguidade real. A tabela `logins` produz `logim` sob a regra `ns → m`, que está correta para `armazens`, e produz `login` sob a regra genérica de queda de `s`. Não existe informação no nome que resolva qual das duas está certa. Com primeira-regra-vence, a ordem escolhida decide arbitrariamente qual dos dois casos o projeto quebra.
+
+Então a normalização de nome de tabela devolve um **conjunto ordenado de formas candidatas**, sempre incluindo o nome original inalterado, e o casamento tem sucesso quando qualquer forma casa. Toda regra aplicável contribui uma forma; a ordem de declaração determina a ordem de preferência dentro do conjunto, não exclusividade.
+
+A forma que casou é reportada junto. É isso que permite à pontuação distinguir `SigExactName` de `SigNormalizedName` — casamento no nome original vale mais que casamento obtido depois de remover prefixo e despluralizar.
+
+O custo é um conjunto pequeno por tabela em memória e a possibilidade de casamento espúrio por forma agressiva. O segundo é aceitável: a pontuação penaliza, e a validação contra dados derruba o que for coincidência. O projeto aceita ruído de candidato, não aceita falso positivo confirmado.
+
+A regra genérica de `s` fica sempre por último, e as regras específicas vêm antes das genéricas.
 
 Isso resolve duas coisas ao mesmo tempo. Tecnicamente, torna a lógica mais frágil do projeto — despluralização — testável por tabela de casos em vez de por código. E estrategicamente, converte o que seria um teto de adoção numa superfície de contribuição: um perfil novo é o PR mais fácil que um projeto pode oferecer a quem passa pelo repositório. Ship inicial com `pt-br`, `en` e `es`.
 

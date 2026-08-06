@@ -1,0 +1,17 @@
+# binários e artefatos de build
+/pgfathom
+/dist/
+*.exe
+
+# cobertura e perfis
+*.out
+*.test
+/coverage/
+
+# configuração de agente de código (regenerável: openspec init --tools claude)
+.claude/
+
+# editor e sistema
+.DS_Store
+.idea/
+.vscode/
