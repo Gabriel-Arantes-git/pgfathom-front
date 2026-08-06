@@ -1,6 +1,7 @@
 # binários e artefatos de build
-/pgfathom
+/bin/
 /dist/
+/pgfathom
 *.exe
 
 # cobertura e perfis

@@ -1,0 +1,47 @@
+version: "2"
+
+linters:
+  enable:
+    - errcheck
+    - govet
+    - staticcheck
+    - ineffassign
+    - unused
+    - revive
+    - misspell
+    - bodyclose
+    - errorlint
+    - gocritic
+
+  settings:
+    revive:
+      rules:
+        - name: exported
+        - name: error-strings
+        - name: error-return
+        - name: context-as-argument
+        - name: indent-error-flow
+
+  exclusions:
+    rules:
+      # Tabela de casos de teste é declarativa e longa por natureza.
+      - path: _test\.go
+        linters:
+          - gocritic
+
+      # As fixtures são nomes de tabela e coluna em português e espanhol —
+      # `clientes`, `responsaveis`, `opcoes`. Um corretor ortográfico de inglês
+      # lê isso como erro de digitação, e é exatamente esse vocabulário que a
+      # ferramenta existe para entender.
+      - path: _test\.go
+        linters:
+          - misspell
+
+formatters:
+  enable:
+    - gofmt
+    - goimports
+  settings:
+    goimports:
+      local-prefixes:
+        - github.com/lvcas-dotcom/pgfathom

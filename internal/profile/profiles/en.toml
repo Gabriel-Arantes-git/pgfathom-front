@@ -1,0 +1,44 @@
+# Naming profile for English-language schemas.
+
+name = "en"
+
+column_suffixes = ["_id", "_uuid", "_key", "_ref", "_fk", "_no", "id"]
+column_prefixes = ["id_", "fk_"]
+table_prefixes  = ["tbl_", "tb_", "t_", "sys_"]
+
+[[plural]]          # categories → category
+suffix   = "ies"
+singular = "y"
+
+[[plural]]          # addresses → address
+suffix   = "sses"
+singular = "ss"
+
+[[plural]]          # boxes → box
+suffix   = "xes"
+singular = "x"
+
+[[plural]]          # batches → batch
+suffix   = "ches"
+singular = "ch"
+
+[[plural]]          # dishes → dish
+suffix   = "shes"
+singular = "sh"
+
+[[plural]]          # indices → index
+suffix   = "ices"
+singular = "ex"
+
+[[plural]]          # leaves → leaf
+suffix   = "ves"
+singular = "f"
+
+[[plural]]          # people → person
+suffix   = "people"
+singular = "person"
+
+# Generic, always last.
+[[plural]]          # orders → order
+suffix   = "s"
+singular = ""

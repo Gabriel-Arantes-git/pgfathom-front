@@ -42,10 +42,20 @@ Quando nenhum afixo casa, o nome da coluna SHALL ser devolvido inalterado como c
 - **WHEN** a coluna se chama `municipio` e nenhum afixo do perfil casa
 - **THEN** o nome de entidade extraído é `municipio`
 
-#### Scenario: Sufixo mais longo tem precedência
+#### Scenario: Afixo mais longo tem precedência
 
-- **WHEN** a coluna se chama `pedido_codigo` e o perfil lista tanto `_codigo` quanto `_cod`
-- **THEN** o nome de entidade extraído é `pedido`, não `pedido_go`
+- **WHEN** a coluna se chama `pedido_cod` e o perfil lista tanto `_cod` quanto `cod`
+- **THEN** o nome de entidade extraído é `pedido`, não `pedido_`
+
+#### Scenario: Ordem que produziria sombreamento é rejeitada no carregamento
+
+- **WHEN** um perfil declara `cod` antes de `_cod`, ordem em que o afixo mais curto casaria primeiro e removeria menos do que o pretendido
+- **THEN** o carregamento falha com erro apontando os dois afixos, em vez de aceitar o perfil e degradar o recall em silêncio
+
+#### Scenario: Remoção nunca esvazia o nome
+
+- **WHEN** a coluna se chama exatamente como um afixo, por exemplo `id`
+- **THEN** o resultado é um nome não vazio, e a remoção que produziria string vazia é recusada
 
 ### Requirement: Normalização de nome de tabela produz conjunto de formas
 

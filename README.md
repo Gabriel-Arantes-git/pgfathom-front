@@ -274,6 +274,29 @@ reporting the split is how you can see it working.
 The metric that has no tolerance is the other one: **zero confirmed false positives.** A
 missed relationship costs you a finding. A wrong one confirmed costs you the tool.
 
+## Building from source
+
+Requires Go 1.25 or newer. No cgo, no other toolchain.
+
+```console
+$ git clone https://github.com/lvcas-dotcom/pgfathom
+$ cd pgfathom
+$ make build          # → bin/pgfathom
+$ make test           # unit suite: no Docker, no network
+```
+
+`make test` is the whole suite for everything that exists today, and it is meant
+to stay that way: anything needing a database lives behind the `integration`
+build tag and runs with `make test-integration`. Contributing a naming profile
+for your language should never require installing a container runtime.
+
+```console
+$ make help           # list every target
+$ make lint           # golangci-lint
+$ make cover          # coverage report
+$ make crosscheck     # prove the cross-platform build still works
+```
+
 ## Contributing
 
 Not open for code contributions yet — there is no code. The design is, though, and it is
