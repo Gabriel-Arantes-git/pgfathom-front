@@ -1,8 +1,6 @@
-// Package testutil holds helpers shared across the test suites.
-//
-// It is deliberately dependency-free. Golden-file handling is fifteen lines of
-// standard library, and a project whose go.mod will be read by whoever approves
-// running it against production should not carry a dependency for that.
+// Package testutil holds helpers shared across the test suites. It is
+// deliberately dependency-free: whoever approves running this against
+// production will read go.mod, and golden files are not worth a line in it.
 package testutil
 
 import (
@@ -15,12 +13,9 @@ import (
 
 var update = flag.Bool("update", false, "rewrite golden files instead of comparing against them")
 
-// Golden compares got against the contents of testdata/<name>.golden.
-//
-// With -update the file is rewritten instead, which is how output changes get
-// reviewed: run the tests, then read the diff of the golden files as part of
-// the change. Formatting regresses easily and silently, and a golden file turns
-// that into a visible diff.
+// Golden compares got against testdata/<name>.golden, or rewrites the file
+// when -update is set. Formatting regresses silently; a golden file turns that
+// into a reviewable diff.
 func Golden(t *testing.T, name, got string) {
 	t.Helper()
 
@@ -51,9 +46,8 @@ func Golden(t *testing.T, name, got string) {
 	}
 }
 
-// firstDifference points at the first line that diverges, because eyeballing
-// two long blocks for the one changed character is not a good use of anyone's
-// afternoon.
+// firstDifference points at the first diverging line, so nobody has to eyeball
+// two long blocks for one changed character.
 func firstDifference(want, got string) string {
 	wantLines, gotLines := strings.Split(want, "\n"), strings.Split(got, "\n")
 

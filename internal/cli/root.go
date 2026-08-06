@@ -29,14 +29,12 @@ func NewRootCommand(streams *Streams) *cobra.Command {
 }
 
 // newRootCommand also returns a flag reporting whether execution got past
-// command resolution, flag parsing and argument validation.
+// parsing.
 //
 // Cobra reports "unknown command", "unknown flag" and argument-count failures
-// as ordinary errors, indistinguishable from a runtime failure, and matching on
-// their message text would break the moment cobra rewords anything. All three
-// happen strictly before PersistentPreRunE runs, so the position in the
-// lifecycle is the reliable signal: an error with this flag still false is a
-// usage problem, whatever it says.
+// as ordinary errors, and matching on their message text would break the moment
+// cobra rewords anything. All three happen before PersistentPreRunE, so the
+// position in the lifecycle is the reliable signal.
 func newRootCommand(streams *Streams) (*cobra.Command, *bool) {
 	opts := &globalOptions{color: string(ColorAuto), logLevel: "warn"}
 	parsed := new(bool)
@@ -75,8 +73,8 @@ output, logs or generated files.`,
 			return nil
 		},
 
-		// With no subcommand, print help and succeed. Running a tool with no
-		// arguments to find out what it does is not an error.
+		// Running a tool with no arguments to find out what it does is not an
+		// error.
 		RunE: func(cmd *cobra.Command, _ []string) error {
 			return cmd.Help()
 		},
@@ -86,9 +84,6 @@ output, logs or generated files.`,
 	root.SetErr(streams.Err)
 	root.SetIn(streams.In)
 
-	// Help belongs on stdout when explicitly asked for, and cobra's default of
-	// writing it to stdout for --help is what we want; usage on error goes to
-	// stderr, which SilenceUsage plus the top-level handler takes care of.
 	root.PersistentFlags().StringVar(&opts.color, "color", opts.color,
 		"colour output: auto, always or never")
 	root.PersistentFlags().StringVar(&opts.logLevel, "log-level", opts.logLevel,
@@ -134,11 +129,10 @@ func parseLogLevel(s string) (slog.Level, error) {
 
 // Run executes the command tree and returns the process exit code.
 //
-// The root context is cancelled on SIGINT and SIGTERM and is threaded through
-// every command. There is nothing to cancel yet, which is exactly why it is
-// established now: retrofitting cancellation once three layers exist is a wide
-// refactor that reliably leaves one path uncovered, and a path without
-// cancellation is a query left running on someone's production server.
+// The root context is cancelled on SIGINT and SIGTERM. Nothing needs cancelling
+// yet, which is why it is established now: retrofitting it once three layers
+// exist reliably leaves one path uncovered, and an uncovered path is a query
+// left running on someone's production server.
 func Run(args []string, streams *Streams) int {
 	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
 	defer stop()

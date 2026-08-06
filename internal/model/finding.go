@@ -1,18 +1,16 @@
 package model
 
-// FindingKind identifies a structural finding that requires no inference at all.
-// These come straight from the catalog: deterministic, free, and immune to
-// false positives.
+// FindingKind identifies a structural finding that requires no inference:
+// straight from the catalog, deterministic, immune to false positives.
 type FindingKind string
 
 const (
 	// FindingNotValidConstraint is a constraint created NOT VALID and never
-	// validated. It blocks new violations but never checked the rows that were
-	// already there, while presenting itself as a normal constraint everywhere.
+	// validated. See ForeignKey.Validated.
 	FindingNotValidConstraint FindingKind = "not_valid_constraint"
 
 	// FindingFKWithoutIndex is a declared foreign key with no usable index on
-	// the child side, which turns every parent delete into a sequential scan.
+	// the child side.
 	FindingFKWithoutIndex FindingKind = "fk_without_index"
 
 	// FindingOrphanReference is a reference column pointing at a table that no
@@ -24,13 +22,11 @@ const (
 type Finding struct {
 	Kind FindingKind `json:"kind"`
 
-	// Object is the catalog object the finding is about, schema-qualified.
+	// Object is the schema-qualified catalog object the finding is about.
 	Object string `json:"object"`
 
-	// Detail describes the finding. Object names and conditions only, never a
-	// value read from a user table.
+	// Detail describes the finding. Object names and conditions only.
 	Detail string `json:"detail,omitempty"`
 
-	// Metrics carries counts and sizes relevant to the finding.
 	Metrics map[string]int64 `json:"metrics,omitempty"`
 }
