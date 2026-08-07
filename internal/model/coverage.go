@@ -41,6 +41,18 @@ type Coverage struct {
 	CandidatesValidated int `json:"candidates_validated"`
 	CandidatesTimedOut  int `json:"candidates_timed_out"`
 
+	// StatsPrefilter reports whether the statistical prefilter ran at all.
+	// False and "zero rejected" are different claims: one is "I did not look",
+	// the other is "I looked and dropped nothing".
+	StatsPrefilter bool `json:"stats_prefilter"`
+
+	// The prefilter funnel. Checked = rejected + penalized-or-clean + without
+	// stats; the split is what predicts how many anti-joins validation will
+	// cost, and what proves the layer pays for itself.
+	CandidatesStatsChecked  int `json:"candidates_stats_checked,omitempty"`
+	CandidatesStatsRejected int `json:"candidates_stats_rejected,omitempty"`
+	CandidatesWithoutStats  int `json:"candidates_without_stats,omitempty"`
+
 	// StatsResetAt is when server statistics were last reset. Nil means unknown.
 	StatsResetAt *time.Time `json:"stats_reset_at"`
 

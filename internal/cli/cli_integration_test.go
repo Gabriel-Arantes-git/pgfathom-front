@@ -4,10 +4,12 @@ package cli_test
 
 import (
 	"bytes"
+	"encoding/json"
 	"strings"
 	"testing"
 
 	"github.com/lvcas-dotcom/pgfathom/internal/cli"
+	"github.com/lvcas-dotcom/pgfathom/internal/model"
 	"github.com/lvcas-dotcom/pgfathom/internal/testutil"
 )
 
@@ -25,6 +27,7 @@ var plantedValues = []string{
 	"Sao Bernardo do Campo",
 	"servico de manutencao",
 	"peca de reposicao",
+	"Leitura Manual Bloco C",
 }
 
 // TestNoUserDataInAnyStream runs the real commands end to end and scans every
@@ -42,6 +45,8 @@ func TestNoUserDataInAnyStream(t *testing.T) {
 		{"audit json", "not_valid_constraints", []string{"audit", "--format", "json"}},
 		{"discover table", "inferable", []string{"discover", "--include-rejected"}},
 		{"discover json", "inferable", []string{"discover", "--format", "json"}},
+		{"discover with prefilter", "stats_prefilter", []string{"discover", "--include-rejected"}},
+		{"discover json with prefilter", "stats_prefilter", []string{"discover", "--format", "json"}},
 	}
 
 	for _, tc := range cases {
@@ -70,5 +75,52 @@ func TestNoUserDataInAnyStream(t *testing.T) {
 				}
 			}
 		})
+	}
+}
+
+// TestNoStatsFlagRemovesTheLayer proves the prefilter is switchable as a
+// whole: a penalty derived from estimates is only auditable if a run with and
+// without it can be compared.
+func TestNoStatsFlagRemovesTheLayer(t *testing.T) {
+	dsn := testutil.Postgres(t, "stats_prefilter")
+
+	discover := func(extra ...string) *model.Result {
+		t.Helper()
+
+		var out, errOut bytes.Buffer
+		streams := &cli.Streams{Out: &out, Err: &errOut, In: strings.NewReader("")}
+
+		args := append([]string{"discover", "--format", "json", "--dsn", dsn, "--color", "never"}, extra...)
+		if code := cli.Run(args, streams); code != 0 {
+			t.Fatalf("exit code %d, stderr:\n%s", code, errOut.String())
+		}
+
+		var res model.Result
+		if err := json.Unmarshal(out.Bytes(), &res); err != nil {
+			t.Fatalf("decoding JSON output: %v", err)
+		}
+		return &res
+	}
+
+	withStats := discover()
+	if !withStats.Coverage.StatsPrefilter {
+		t.Error("coverage must declare the prefilter ran")
+	}
+	if withStats.Coverage.CandidatesStatsRejected == 0 {
+		t.Error("the arithmetically impossible candidate should be rejected")
+	}
+
+	without := discover("--no-stats")
+	if without.Coverage.StatsPrefilter {
+		t.Error("coverage must declare the prefilter did not run")
+	}
+	for _, c := range without.Candidates {
+		for _, kind := range []model.SignalKind{
+			model.SigCardViolation, model.SigRangeViolation, model.SigStatsUnavailable,
+		} {
+			if c.HasSignal(kind) {
+				t.Errorf("%s carries %s with the prefilter off", c.Child, kind)
+			}
+		}
 	}
 }

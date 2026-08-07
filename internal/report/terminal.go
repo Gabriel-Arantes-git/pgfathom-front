@@ -149,6 +149,16 @@ func writeCoverage(b *strings.Builder, c model.Coverage) {
 		}
 	}
 
+	// The prefilter line distinguishes "I looked and dropped nothing" from "I
+	// did not look". It only appears when there was an inference to filter, so
+	// audit output stays free of it.
+	if c.StatsPrefilter {
+		fmt.Fprintf(b, "  stats prefilter: %d checked · %d rejected · %d without statistics\n",
+			c.CandidatesStatsChecked, c.CandidatesStatsRejected, c.CandidatesWithoutStats)
+	} else if c.CandidatesFound > 0 {
+		b.WriteString("  stats prefilter off — no planner-statistics check was applied\n")
+	}
+
 	if c.StatsResetAt == nil {
 		b.WriteString("  ! statistics reset time unknown — usage counters carry no meaning\n")
 	}

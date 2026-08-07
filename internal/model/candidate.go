@@ -47,6 +47,11 @@ const (
 	SigCardViolation  SignalKind = "stats_cardinality_violation"
 )
 
+// SigStatsUnavailable is a zero-weight marker: the prefilter looked for planner
+// statistics and found none. It never moves the score; it exists because an
+// absent penalty with no record would be indistinguishable from approval.
+const SigStatsUnavailable SignalKind = "stats_unavailable"
+
 // Signal is one piece of evidence for or against a candidate.
 type Signal struct {
 	Kind   SignalKind `json:"kind"`
