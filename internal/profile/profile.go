@@ -49,6 +49,15 @@ type Profile struct {
 	// TablePrefixes are legacy convention prefixes stripped from table names.
 	TablePrefixes []string `toml:"table_prefixes"`
 
+	// TypeSuffixes mark the discriminator half of a polymorphic pair, as in
+	// documento_tipo beside documento_id.
+	TypeSuffixes []string `toml:"type_suffixes"`
+
+	// GenericEntities are entity names that match almost anything and mean
+	// little — the domain tables a legacy schema has dozens of. They are
+	// language-dependent, so they live here rather than in Go.
+	GenericEntities []string `toml:"generic_entities"`
+
 	// Plural rules run from most specific to most generic. Unlike the affix
 	// lists, every applicable rule contributes a form; order sets preference
 	// within the set, not exclusivity.
@@ -133,6 +142,8 @@ func (p *Profile) Validate() error {
 		{"column_suffixes", p.ColumnSuffixes},
 		{"column_prefixes", p.ColumnPrefixes},
 		{"table_prefixes", p.TablePrefixes},
+		{"type_suffixes", p.TypeSuffixes},
+		{"generic_entities", p.GenericEntities},
 	} {
 		if err := checkNoDuplicates(set.field, set.items); err != nil {
 			return err

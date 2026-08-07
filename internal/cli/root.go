@@ -95,6 +95,7 @@ output, logs or generated files.`,
 
 	root.AddCommand(newVersionCommand(streams))
 	root.AddCommand(newAuditCommand(streams))
+	root.AddCommand(newDiscoverCommand(streams))
 
 	return root, parsed
 }

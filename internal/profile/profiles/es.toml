@@ -9,6 +9,10 @@ column_suffixes = ["_codigo", "_id", "_cod", "_clave", "_ref", "_fk", "id", "cod
 column_prefixes = ["id_", "cod_", "fk_"]
 table_prefixes  = ["tbl_", "tb_", "sys_", "cat_"]
 
+type_suffixes    = ["_tipo", "_clase"]
+generic_entities = ["estado", "situacion", "situación", "tipo", "clase",
+                    "categoria", "categoría", "nivel", "origen"]
+
 [[plural]]          # camiones → camion
 suffix   = "ones"
 singular = "on"

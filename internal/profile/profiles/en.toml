@@ -6,6 +6,10 @@ column_suffixes = ["_id", "_uuid", "_key", "_ref", "_fk", "_no", "id"]
 column_prefixes = ["id_", "fk_"]
 table_prefixes  = ["tbl_", "tb_", "t_", "sys_"]
 
+type_suffixes    = ["_type", "_kind"]
+generic_entities = ["status", "type", "kind", "category", "state",
+                    "level", "origin", "classification"]
+
 [[plural]]          # categories → category
 suffix   = "ies"
 singular = "y"
