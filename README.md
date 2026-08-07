@@ -28,11 +28,14 @@
 `pgfathom` finds the relationships your database has but never declared — and proves them against the data instead of guessing from column names.
 
 > [!IMPORTANT]
-> **Pre-release. No code yet.**
-> The design is complete and specified in [`docs/PGFATHOM.md`](docs/PGFATHOM.md); the
-> implementation plan is in [`docs/ROADMAP.md`](docs/ROADMAP.md). Terminal output shown
-> below is the target design, not a recording. Recovery-rate benchmarks will be published
-> here once the tool runs against the reference corpus — no numbers are claimed until then.
+> **Pre-release. Under active development.**
+> The design is specified in [`docs/PGFATHOM.md`](docs/PGFATHOM.md) and implementation is
+> tracked in [`docs/ROADMAP.md`](docs/ROADMAP.md). What runs today: `pgfathom audit`
+> end to end, and `pgfathom discover` up to candidate generation, scoring and the
+> statistical prefilter — **validation against data is not implemented yet, so nothing
+> `discover` reports is confirmed**. Terminal output shown below is the target design,
+> not a recording. Recovery-rate benchmarks will be published here once the tool runs
+> against the reference corpus — no numbers are claimed until then.
 
 ---
 
@@ -241,11 +244,12 @@ like from a schema that finally knows its own relationships.
 
 | Phase | Capability | Status |
 |---|---|---|
-| 1 | Core model and naming profiles | Specified |
-| 2 | Catalog inspection · `pgfathom audit` | Planned |
-| 3 | Name-based candidate inference | Planned |
-| 4 | Planner-statistics prefilter | Planned |
-| 5 | Data validation · `pgfathom discover` | Planned |
+| 1 | Core model and naming profiles | Done |
+| 2 | Catalog inspection · `pgfathom audit` | Done |
+| 3 | Name-based candidate inference | Done |
+| 3.5 | Naming-convention detection from the schema itself | Done |
+| 4 | Planner-statistics prefilter | Done |
+| 5 | Data validation · `pgfathom discover` | In progress |
 | 6 | Join mining from views and functions | Planned |
 | 7 | Terminal, JSON and SQL output | Planned |
 | 8 | Benchmark corpus and release | Planned |
