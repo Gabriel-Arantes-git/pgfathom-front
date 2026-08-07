@@ -23,6 +23,11 @@ type DiscoverView struct {
 	MinScore        float64
 	ShowDiscarded   bool
 	ValidationStage string
+
+	// Detection is what the schema revealed about its own naming convention.
+	// Reporting it is not decoration: a profile that changes itself without
+	// saying so leaves the user unable to reproduce or to disagree.
+	Detection model.NamingDetection
 }
 
 // Discover renders inferred candidates.
@@ -48,6 +53,7 @@ func Discover(w io.Writer, v DiscoverView) error {
 		writeDiscarded(&b, v.Discarded)
 	}
 
+	writeDetection(&b, v)
 	writeObservations(&b, r.Findings)
 	writeCoverage(&b, r.Coverage)
 
@@ -124,4 +130,37 @@ func summarize(signals []model.Signal) string {
 		parts = append(parts, string(s.Kind))
 	}
 	return strings.Join(parts, " ")
+}
+
+func writeDetection(b *strings.Builder, v DiscoverView) {
+	if !v.Detection.Enabled {
+		fmt.Fprintf(b, "  naming detection is off — only the %s profile applies\n\n", v.Result.Profile)
+		return
+	}
+
+	if v.Detection.Empty() {
+		fmt.Fprintf(b, "  Nothing detected from %d tables and %d declared keys; the %s profile applies alone.\n\n",
+			v.Detection.Tables, v.Detection.DeclaredKeys, v.Result.Profile)
+		return
+	}
+
+	fmt.Fprintf(b, "  DETECTED — conventions read from the schema itself, added to %s\n", v.Result.Profile)
+	fmt.Fprintf(b, "  %s\n", strings.Repeat("─", 74))
+
+	tw := tabwriter.NewWriter(b, 0, 0, 2, ' ', 0)
+	for _, group := range []struct {
+		label string
+		items []model.NamingEvidence
+	}{
+		{"reference suffix", v.Detection.ColumnSuffixes},
+		{"reference prefix", v.Detection.ColumnPrefixes},
+		{"table prefix", v.Detection.TablePrefixes},
+	} {
+		for _, e := range group.items {
+			_, _ = fmt.Fprintf(tw, "  %s\t%s\t%d occurrences (%.0f%%)\n",
+				group.label, e.Affix, e.Occurrences, 100*e.Share)
+		}
+	}
+	_ = tw.Flush()
+	b.WriteString("\n")
 }

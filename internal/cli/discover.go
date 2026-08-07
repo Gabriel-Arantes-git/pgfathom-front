@@ -26,6 +26,7 @@ type discoverOptions struct {
 	minScore        float64
 	format          string
 	includeRejected bool
+	noDetect        bool
 }
 
 type connectionOptions struct {
@@ -90,6 +91,8 @@ Every score comes with the signals that produced it, so it can be argued with.`,
 	f.StringVar(&opts.format, "format", opts.format, "output format: table or json")
 	f.BoolVar(&opts.includeRejected, "include-rejected", false,
 		"also show candidates discarded by the threshold")
+	f.BoolVar(&opts.noDetect, "no-detect-naming", false,
+		"do not read naming conventions from the schema; use only the profile")
 
 	return cmd
 }
@@ -120,8 +123,18 @@ func runDiscover(ctx context.Context, streams *Streams, opts *discoverOptions) e
 		return err
 	}
 
+	// Detection is on by default: whoever needs it is precisely whoever does not
+	// know they need it. Measured against real schemas, a missing local
+	// convention cost 78 points of recall and failed silently.
+	var detection model.NamingDetection
+	active := naming
+	if !opts.noDetect {
+		detection = naming.Detect(cat.Schemas)
+		active = naming.WithDetected(detection)
+	}
+
 	inferred := infer.Generate(cat.Schemas, infer.Options{
-		Profile:  naming,
+		Profile:  active,
 		MinScore: opts.minScore,
 	})
 
@@ -131,6 +144,7 @@ func runDiscover(ctx context.Context, streams *Streams, opts *discoverOptions) e
 	version, _, _ := buildinfo.Resolve()
 	result := model.NewResult(version, naming.Name, time.Now().UTC(), coverage)
 	result.ServerVersion = pool.ServerVersion()
+	result.Naming = detection
 	result.Schemas = cat.Schemas
 	result.Candidates = inferred.Candidates
 	result.Findings = observations(inferred)
@@ -149,6 +163,7 @@ func runDiscover(ctx context.Context, streams *Streams, opts *discoverOptions) e
 		MinScore:        opts.minScore,
 		ShowDiscarded:   opts.includeRejected,
 		ValidationStage: validationStage,
+		Detection:       detection,
 	})
 }
 

@@ -23,6 +23,10 @@ type Result struct {
 	// commands that make no inferences.
 	Profile string `json:"profile,omitempty"`
 
+	// Naming records the conventions detected in the schema, so a run can be
+	// reproduced without knowing which flags produced it.
+	Naming NamingDetection `json:"naming_detection"`
+
 	Schemas    []Schema    `json:"schemas"`
 	Candidates []Candidate `json:"candidates,omitempty"`
 	Findings   []Finding   `json:"findings,omitempty"`
