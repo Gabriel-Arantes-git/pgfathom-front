@@ -67,29 +67,43 @@ func Discover(w io.Writer, v DiscoverView) error {
 }
 
 func writeCandidates(b *strings.Builder, candidates []model.Candidate) {
-	fmt.Fprintf(b, "  CANDIDATES — inferred, not yet verified against data  (%d)\n", len(candidates))
+	fmt.Fprintf(b, "  CANDIDATES  (%d)\n", len(candidates))
 	fmt.Fprintf(b, "  %s\n", strings.Repeat("─", 74))
+	writeCandidateTable(b, candidates)
+}
 
+func writeDiscarded(b *strings.Builder, discarded []model.Candidate) {
+	fmt.Fprintf(b, "  DISCARDED — below the threshold or statistically impossible  (%d)\n", len(discarded))
+	fmt.Fprintf(b, "  %s\n", strings.Repeat("─", 74))
+	writeCandidateTable(b, discarded)
+}
+
+func writeCandidateTable(b *strings.Builder, candidates []model.Candidate) {
 	tw := tabwriter.NewWriter(b, 0, 0, 2, ' ', 0)
 	for _, c := range candidates {
-		_, _ = fmt.Fprintf(tw, "  %s\t→ %s\t%.2f\t%s\n",
-			c.Child.String(), c.Parent.String(), c.MetaScore, summarize(c.Signals))
+		_, _ = fmt.Fprintf(tw, "  %s\t→ %s\t%.2f\t%s\t%s\n",
+			c.Child.String(), c.Parent.String(), c.MetaScore, c.Verdict, describe(c))
 	}
 	_ = tw.Flush()
 	b.WriteString("\n")
 }
 
-func writeDiscarded(b *strings.Builder, discarded []model.Candidate) {
-	fmt.Fprintf(b, "  BELOW THRESHOLD — generated and discarded  (%d)\n", len(discarded))
-	fmt.Fprintf(b, "  %s\n", strings.Repeat("─", 74))
-
-	tw := tabwriter.NewWriter(b, 0, 0, 2, ' ', 0)
-	for _, c := range discarded {
-		_, _ = fmt.Fprintf(tw, "  %s\t→ %s\t%.2f\t%s\n",
-			c.Child.String(), c.Parent.String(), c.MetaScore, summarize(c.Signals))
+// describe favors what the data said over how the hypothesis was born: once a
+// candidate is validated, its containment and orphan counts are the story, and
+// the signals recede to the unvalidated rows where they are all there is.
+func describe(c model.Candidate) string {
+	if v := c.Validation; v != nil {
+		out := fmt.Sprintf("%.1f%%  %d orphan rows / %d values",
+			100*v.ContainmentRows(), v.OrphanRows, v.OrphanVals)
+		if c.Reason != "" {
+			out += "  " + c.Reason
+		}
+		return out
 	}
-	_ = tw.Flush()
-	b.WriteString("\n")
+	if c.Reason != "" {
+		return c.Reason
+	}
+	return summarize(c.Signals)
 }
 
 func writeObservations(b *strings.Builder, findings []model.Finding) {

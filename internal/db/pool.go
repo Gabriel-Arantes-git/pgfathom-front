@@ -121,6 +121,13 @@ func (p *Pool) QueryRow(ctx context.Context, sql string, args ...any) pgx.Row {
 	return p.pool.QueryRow(ctx, sql, args...)
 }
 
+// Begin starts a read-only transaction. It exists for callers that need SET
+// LOCAL — a setting scoped to one statement's transaction instead of to the
+// whole session.
+func (p *Pool) Begin(ctx context.Context) (pgx.Tx, error) {
+	return p.pool.BeginTx(ctx, pgx.TxOptions{AccessMode: pgx.ReadOnly})
+}
+
 // Close releases every connection.
 func (p *Pool) Close() { p.pool.Close() }
 

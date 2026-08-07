@@ -15,11 +15,8 @@ import (
 	"github.com/lvcas-dotcom/pgfathom/internal/profile"
 	"github.com/lvcas-dotcom/pgfathom/internal/report"
 	"github.com/lvcas-dotcom/pgfathom/internal/stats"
+	"github.com/lvcas-dotcom/pgfathom/internal/validate"
 )
-
-// validationStage is what discover currently promises, and refuses to promise
-// more than. It changes when validation against data lands.
-const validationStage = "! candidates only — the data has NOT been consulted, nothing here is confirmed"
 
 type discoverOptions struct {
 	connection      connectionOptions
@@ -29,6 +26,19 @@ type discoverOptions struct {
 	includeRejected bool
 	noDetect        bool
 	noStats         bool
+	full            bool
+	sampleRows      int64
+}
+
+// validationStage tells the user what the verdicts in front of them can and
+// cannot claim. The sampled warning is not a footnote: a clean sample is not
+// evidence of absence, and the report has to say so where it cannot be missed.
+func validationStage(full bool, sampleRows int64) string {
+	if full {
+		return "full validation — every row was examined; verdicts are conclusive"
+	}
+	return fmt.Sprintf("! sampled validation (%d rows/table target) — orphan counts are floors, "+
+		"nothing here is confirmed; re-run with --full to prove absence", sampleRows)
 }
 
 type connectionOptions struct {
@@ -97,6 +107,10 @@ Every score comes with the signals that produced it, so it can be argued with.`,
 		"do not read naming conventions from the schema; use only the profile")
 	f.BoolVar(&opts.noStats, "no-stats", false,
 		"do not use planner statistics to prefilter candidates")
+	f.BoolVar(&opts.full, "full", false,
+		"validate against every row; the only mode that can confirm a relationship")
+	f.Int64Var(&opts.sampleRows, "sample-rows", validate.DefaultTargetRows,
+		"target rows per table in sampled validation")
 
 	return cmd
 }
@@ -163,6 +177,19 @@ func runDiscover(ctx context.Context, streams *Streams, opts *discoverOptions) e
 		}
 	}
 
+	validated, err := validate.Run(ctx, pool, cat.Schemas, inferred.Candidates, validate.Options{
+		Full:        opts.full,
+		TargetRows:  opts.sampleRows,
+		Timeout:     opts.connection.statementTimeout,
+		Concurrency: opts.connection.concurrency,
+	})
+	if err != nil {
+		return err
+	}
+	inferred.Candidates = validated.Candidates
+	coverage.CandidatesValidated = validated.Validated
+	coverage.CandidatesTimedOut = validated.TimedOut
+
 	version, _, _ := buildinfo.Resolve()
 	result := model.NewResult(version, naming.Name, time.Now().UTC(), coverage)
 	result.ServerVersion = pool.ServerVersion()
@@ -184,7 +211,7 @@ func runDiscover(ctx context.Context, streams *Streams, opts *discoverOptions) e
 		Discarded:       inferred.Discarded,
 		MinScore:        opts.minScore,
 		ShowDiscarded:   opts.includeRejected,
-		ValidationStage: validationStage,
+		ValidationStage: validationStage(opts.full, opts.sampleRows),
 		Detection:       detection,
 	})
 }
