@@ -86,8 +86,11 @@ func applySessionPolicies(ctx context.Context, conn *pgx.Conn, cfg Config) error
 // clear message beats failing mid-read with a missing-column error the user has
 // no way to interpret.
 func (p *Pool) checkServerVersion(ctx context.Context) error {
+	// SHOW returns text for every setting, so the value is read through
+	// current_setting with an explicit cast instead.
 	var num int
-	if err := p.pool.QueryRow(ctx, "SHOW server_version_num").Scan(&num); err != nil {
+	const query = `SELECT current_setting('server_version_num')::int`
+	if err := p.pool.QueryRow(ctx, query).Scan(&num); err != nil {
 		return fmt.Errorf("reading server version from %s: %w", p.target, err)
 	}
 

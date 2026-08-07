@@ -8,13 +8,31 @@ import (
 
 // TableStats is size and usage information about a table.
 type TableStats struct {
-	// EstimatedRows is pg_class.reltuples: an estimate, not a count.
+	// EstimatedRows is pg_class.reltuples verbatim. Since PostgreSQL 14 the
+	// value is -1 when the table has never been ANALYZEd, which means unknown
+	// and not zero. Read it through EstimatedRowCount rather than directly.
 	EstimatedRows int64 `json:"estimated_rows"`
 
 	// TotalBytes includes indexes and TOAST.
 	TotalBytes int64 `json:"total_bytes"`
 
 	Usage UsageStats `json:"usage"`
+}
+
+// RowsUnknown is the reltuples sentinel for a table that was never ANALYZEd.
+const RowsUnknown = -1
+
+// EstimatedRowCount returns the planner's row estimate. The second result is
+// false when the table has never been ANALYZEd.
+//
+// Treating the -1 sentinel as a count is not a display glitch: it makes an
+// unanalyzed table look empty, which in scoring turns every one of them into a
+// small domain table and silently changes the result.
+func (s TableStats) EstimatedRowCount() (int64, bool) {
+	if s.EstimatedRows < 0 {
+		return 0, false
+	}
+	return s.EstimatedRows, true
 }
 
 // UsageCounters are the raw activity counters from pg_stat_user_tables.

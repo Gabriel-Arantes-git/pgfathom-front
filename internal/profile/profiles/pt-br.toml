@@ -10,9 +10,12 @@
 
 name = "pt-br"
 
-# Do mais longo para o mais curto: `_cod` precisa vencer `cod`.
-column_suffixes = ["_codigo", "_id", "_cod", "_key", "_ref", "_fk", "id", "cod"]
-column_prefixes = ["id_", "cod_", "fk_"]
+# Do mais longo para o mais curto, e a validação recusa ordem que sombreie.
+# `_idkey` precisa vir antes de `idkey`, e ambos antes de `_key`: sistemas
+# de gestão pública brasileiros usam muito essa convenção.
+column_suffixes = ["_idkey", "idkey", "_codigo", "_id", "_cod", "_key",
+                   "_ref", "_fk", "id", "cod"]
+column_prefixes = ["idkey_", "id_", "cod_", "fk_"]
 table_prefixes  = ["tbl_", "tb_", "sys_", "cad_", "mov_"]
 
 type_suffixes    = ["_tipo", "_tp", "_categoria"]

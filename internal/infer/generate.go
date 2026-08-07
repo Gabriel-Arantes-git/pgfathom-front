@@ -289,8 +289,10 @@ func buildSignals(t model.Table, col model.Column, tgt target, origin profile.Or
 	// justify the tool to the bottom of the report.
 	//
 	// The penalty needs both halves: a generic name pointing at a large table
-	// is not a domain table.
-	if isGeneric(entity, opts.Profile) && tgt.table.Stats.EstimatedRows < opts.smallTableRows() {
+	// is not a domain table. An unanalyzed table has no size at all, and
+	// guessing "small" there would penalize on nothing.
+	rows, known := tgt.table.Stats.EstimatedRowCount()
+	if isGeneric(entity, opts.Profile) && known && rows < opts.smallTableRows() {
 		signals = append(signals, model.Signal{
 			Kind: model.SigGenericDomain, Weight: penaltyGenericDomain, Detail: entity,
 		})
