@@ -61,8 +61,8 @@
 - [x] 7.1 Escrever o cenário-armadilha: coluna `status_id` numa base com tabela `status` onde a coluna guarda outra coisa, conferindo que a penalidade de nome genérico incide
 - [x] 7.2 Escrever teste de determinismo rodando a geração repetidas vezes
 - [x] 7.3 Escrever teste provando que coluna com FK declarada não gera candidato
-- [ ] 7.4 Escrever fixture de integração com relação inferível e conferir a geração ponta a ponta
-- [ ] 7.5 Varrer a saída de `discover` procurando valor de dado do usuário
+- [x] 7.4 Escrever fixture de integração com relação inferível e conferir a geração ponta a ponta
+- [x] 7.5 Varrer a saída de `discover` procurando valor de dado do usuário
 - [x] 7.6 Confirmar que `internal/infer` importa apenas `internal/model` e `internal/profile`
 - [x] 7.7 Rodar `golangci-lint run` e zerar os apontamentos
 - [x] 7.8 Revisar a densidade de comentário, mantendo o padrão das fases anteriores
