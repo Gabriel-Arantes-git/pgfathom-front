@@ -158,3 +158,41 @@ func TestDiscoverEmitsNoANSI(t *testing.T) {
 		t.Errorf("renderer must not emit ANSI: %q", out)
 	}
 }
+
+func TestDetectionIsReported(t *testing.T) {
+	v := discoverView(nil, nil, false)
+	v.Detection = model.NamingDetection{
+		Enabled:        true,
+		ColumnSuffixes: []model.NamingEvidence{{Affix: "_idkey", Occurrences: 102, Share: 0.22}},
+		DeclaredKeys:   470,
+		Tables:         338,
+	}
+
+	out := renderDiscover(t, v)
+
+	if !strings.Contains(out, "_idkey") {
+		t.Errorf("a convention learned from the schema must be named:\n%s", out)
+	}
+	if !strings.Contains(out, "102 occurrences") {
+		t.Errorf("the evidence must accompany it, or the result cannot be argued with:\n%s", out)
+	}
+}
+
+func TestDetectionOffIsStated(t *testing.T) {
+	out := renderDiscover(t, discoverView(nil, nil, false))
+
+	if !strings.Contains(out, "detection is off") {
+		t.Errorf("running without detection must say so:\n%s", out)
+	}
+}
+
+func TestNothingDetectedIsStated(t *testing.T) {
+	v := discoverView(nil, nil, false)
+	v.Detection = model.NamingDetection{Enabled: true, Tables: 12, DeclaredKeys: 0}
+
+	out := renderDiscover(t, v)
+
+	if !strings.Contains(out, "Nothing detected") {
+		t.Errorf("an empty detection must be stated, not implied:\n%s", out)
+	}
+}

@@ -50,6 +50,34 @@ Fases 1 a 5 entregam o `discover` funcionando. Fase 6 é o que faz ele ser melho
 
 ---
 
+## Fase 3.5 — `naming-detection`
+
+**Objetivo.** Derivar a convenção de nomenclatura do próprio schema, em vez de exigir que o usuário a escolha.
+
+**Escopo.** Detecção de prefixo de tabela por frequência. Detecção do afixo de referência a partir das chaves estrangeiras já declaradas. Mesclagem do que foi detectado sobre o perfil base, sem descartar as regras dele. Relato explícito do que foi detectado, porque um perfil que muda sozinho e não avisa é pior que um perfil errado.
+
+**Por que entrou fora do plano original.** Medição contra bancos reais de gestão pública, na fase 3:
+
+| Banco | Tabelas | FKs | Recall |
+|---|---|---|---|
+| `geon_pr_assai` | 784 | 985 | 0,5% |
+| `tributech_2` | 148 | 114 | ~0% |
+| `sinter` (Django) | 18 | 10 | 0,0% |
+
+Os dois primeiros usavam `_idkey` como sufixo de referência, que nenhum perfil oficial conhecia; adicionar o afixo à mão levou a 79,0% e 75,4%. O terceiro é schema em inglês com prefixo de aplicação — `auth_`, `django_` — e continuou em zero mesmo com `--profile en`.
+
+O padrão é o mesmo nos três: **a convenção não é do idioma, é do schema.** E o modo de falha é silencioso — a ferramenta devolve quase nada e parece que o banco não tinha o que descobrir. Quem roda uma vez conclui que não serve.
+
+Há também uma razão de método. A fase 8 mede recall no corpus de benchmark. Se o corpus rodar com perfil escolhido a mão, o número publicado não representa o que um usuário obtém na primeira execução, e a métrica principal do projeto deixa de ser honesta.
+
+**Como é factível sem heurística nova.** As duas convenções estão no que a fase 2 já lê. Prefixo de tabela sai por frequência: se boa parte das tabelas de um schema começa com `tpl_`, isso é convenção e não coincidência. Afixo de referência sai das FKs declaradas: um banco com 470 delas está dizendo qual é a convenção, e basta comparar o nome da coluna filha com o da tabela alvo e olhar o resíduo.
+
+**Entregável.** Rodar sem `--profile` contra os bancos medidos recupera o mesmo recall que o perfil ajustado à mão recuperou.
+
+**Critério de saída.** O que foi detectado aparece na saída. Detecção pode ser desligada. Um afixo detectado nunca substitui os do perfil base, só acrescenta — a normalização já devolve conjunto, então afixo detectado errado custa uma forma espúria, não um falso negativo.
+
+---
+
 ## Fase 4 — `stats-prefilter`
 
 **Objetivo.** Matar candidato impossível usando estatística do planner, antes de qualquer I/O em tabela.
