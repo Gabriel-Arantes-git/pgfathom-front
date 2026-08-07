@@ -61,14 +61,14 @@
 
 ## 6. Verificação
 
-- [ ] 6.1 Teste de integração provando que escrita falha numa conexão do pool
-- [ ] 6.2 Teste provando que `application_name` aparece como `pgfathom` em `pg_stat_activity`
-- [ ] 6.3 Teste provando que cancelamento do contexto encerra a consulta no servidor sem deixar conexão pendente
-- [ ] 6.4 Teste de recusa de servidor abaixo do piso de versão
+- [x] 6.1 Teste de integração provando que escrita falha numa conexão do pool
+- [x] 6.2 Teste provando que `application_name` aparece como `pgfathom` em `pg_stat_activity`
+- [x] 6.3 Teste provando que cancelamento do contexto encerra a consulta no servidor sem deixar conexão pendente
+- [x] 6.4 Teste de recusa de servidor abaixo do piso de versão
 - [x] 6.5 Teste de precedência de credencial e de redação de senha em erro
-- [ ] 6.6 Teste de cobertura contra a fixture `restricted_privileges`, verificando que as tabelas sem acesso aparecem listadas
-- [ ] 6.7 Teste de `audit` contra `not_valid_constraints` e `unindexed_fks`, conferindo os achados esperados
-- [ ] 6.8 Teste que varre terminal, JSON e log procurando os valores plantados nas fixtures
+- [x] 6.6 Teste de cobertura contra a fixture `restricted_privileges`, verificando que as tabelas sem acesso aparecem listadas
+- [x] 6.7 Teste de `audit` contra `not_valid_constraints` e `unindexed_fks`, conferindo os achados esperados
+- [x] 6.8 Teste que varre terminal, JSON e log procurando os valores plantados nas fixtures
 - [x] 6.9 Rodar `golangci-lint run` e zerar os apontamentos
 - [x] 6.10 Confirmar que `go test ./...` segue sem Docker e sem rede, e que o binário não ganhou dependência de teste
 - [x] 6.11 Revisar a densidade de comentário antes de fechar, mantendo o padrão da fase 1
