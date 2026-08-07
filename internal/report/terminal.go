@@ -107,6 +107,10 @@ func formatMetrics(m map[string]int64) string {
 
 func humanCount(n int64) string {
 	switch {
+	case n < 0:
+		// The reltuples sentinel for "never analyzed". Printing -1 as a row
+		// count would be worse than saying nothing.
+		return "unknown"
 	case n >= 1_000_000_000:
 		return fmt.Sprintf("%.1fB", float64(n)/1e9)
 	case n >= 1_000_000:

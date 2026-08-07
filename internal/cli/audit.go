@@ -16,25 +16,12 @@ import (
 )
 
 type auditOptions struct {
-	dsn              string
-	schemas          []string
-	exclude          []string
-	format           string
-	statementTimeout time.Duration
-	lockTimeout      time.Duration
-	idleTxTimeout    time.Duration
-	concurrency      int
+	connection connectionOptions
+	format     string
 }
 
 func newAuditCommand(streams *Streams) *cobra.Command {
-	opts := &auditOptions{
-		schemas:          []string{"public"},
-		format:           "table",
-		statementTimeout: db.DefaultStatementTimeout,
-		lockTimeout:      db.DefaultLockTimeout,
-		idleTxTimeout:    db.DefaultIdleTxTimeout,
-		concurrency:      db.DefaultConcurrency,
-	}
+	opts := &auditOptions{connection: defaultConnectionOptions(), format: "table"}
 
 	cmd := &cobra.Command{
 		Use:   "audit",
@@ -54,15 +41,16 @@ other.`,
 	}
 
 	f := cmd.Flags()
-	f.StringVar(&opts.dsn, "dsn", "",
+	c := &opts.connection
+	f.StringVar(&c.dsn, "dsn", "",
 		"connection string (visible in ps and shell history; prefer "+db.EnvDSN+")")
-	f.StringSliceVar(&opts.schemas, "schema", opts.schemas, "schemas to analyze")
-	f.StringSliceVar(&opts.exclude, "exclude", nil, "glob patterns of tables to skip")
+	f.StringSliceVar(&c.schemas, "schema", c.schemas, "schemas to analyze")
+	f.StringSliceVar(&c.exclude, "exclude", nil, "glob patterns of tables to skip")
+	f.DurationVar(&c.statementTimeout, "timeout", c.statementTimeout, "statement timeout per query")
+	f.DurationVar(&c.lockTimeout, "lock-timeout", c.lockTimeout, "lock timeout per query")
+	f.DurationVar(&c.idleTxTimeout, "idle-tx-timeout", c.idleTxTimeout, "idle transaction timeout")
+	f.IntVar(&c.concurrency, "concurrency", c.concurrency, "maximum simultaneous queries")
 	f.StringVar(&opts.format, "format", opts.format, "output format: table or json")
-	f.DurationVar(&opts.statementTimeout, "timeout", opts.statementTimeout, "statement timeout per query")
-	f.DurationVar(&opts.lockTimeout, "lock-timeout", opts.lockTimeout, "lock timeout per query")
-	f.DurationVar(&opts.idleTxTimeout, "idle-tx-timeout", opts.idleTxTimeout, "idle transaction timeout")
-	f.IntVar(&opts.concurrency, "concurrency", opts.concurrency, "maximum simultaneous queries")
 
 	return cmd
 }
@@ -74,37 +62,13 @@ func runAudit(ctx context.Context, streams *Streams, opts *auditOptions) error {
 
 	warn := func(msg string) { _, _ = fmt.Fprintln(streams.Err, "warning: "+msg) }
 
-	dsn, err := db.ResolveDSN(opts.dsn, warn)
-	if err != nil {
-		return err
-	}
-
-	cfg := db.Config{
-		DSN:              dsn,
-		StatementTimeout: opts.statementTimeout,
-		LockTimeout:      opts.lockTimeout,
-		IdleTxTimeout:    opts.idleTxTimeout,
-		Concurrency:      opts.concurrency,
-	}
-
-	pool, err := db.Open(ctx, cfg)
+	pool, schemas, err := connect(ctx, opts.connection, warn)
 	if err != nil {
 		return err
 	}
 	defer pool.Close()
 
-	schemas := catalog.SortedSchemas(opts.schemas)
-
-	// A failure here means the role cannot see the privilege catalog, which is
-	// not a reason to stop — degrade to less information, not to not working.
-	if writable, err := pool.HasWritePrivileges(ctx, schemas); err != nil {
-		warn("could not verify privileges: " + err.Error())
-	} else if writable {
-		warn("the connected role can write to tables in scope; " +
-			"a dedicated read-only role is recommended")
-	}
-
-	cat, err := catalog.Read(ctx, pool, catalog.Options{Schemas: schemas, Exclude: opts.exclude})
+	cat, err := catalog.Read(ctx, pool, catalog.Options{Schemas: schemas, Exclude: opts.connection.exclude})
 	if err != nil {
 		return err
 	}

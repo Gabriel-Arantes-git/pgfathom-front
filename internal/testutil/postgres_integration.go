@@ -6,6 +6,7 @@ import (
 	"context"
 	"os"
 	"path/filepath"
+	"runtime"
 	"testing"
 	"time"
 
@@ -63,19 +64,28 @@ func PostgresImageDSN(t *testing.T, image, fixture string) string {
 	return dsn
 }
 
-// fixturePath resolves a fixture by name, failing loudly when it is missing so
-// a typo cannot turn into a silently empty schema.
+// fixturePath resolves a fixture against this package's source directory, not
+// against the working directory.
+//
+// go test runs each package with its own directory as the working directory, so
+// a relative "testdata/x.sql" would resolve differently for every caller and
+// find the file only in the package that happens to hold it. The fixtures are
+// shared across catalog, audit, db and infer tests, so they live here and are
+// located from here.
+//
+// A missing fixture fails loudly: a typo must never turn into a silently empty
+// schema, which would make a test pass by finding nothing.
 func fixturePath(t *testing.T, fixture string) string {
 	t.Helper()
 
-	path := filepath.Join("testdata", fixture+".sql")
+	_, thisFile, _, ok := runtime.Caller(0)
+	if !ok {
+		t.Fatal("could not locate the testutil source directory")
+	}
+
+	path := filepath.Join(filepath.Dir(thisFile), "testdata", fixture+".sql")
 	if _, err := os.Stat(path); err != nil {
 		t.Fatalf("fixture %q not found at %s: %v", fixture, path, err)
 	}
-
-	abs, err := filepath.Abs(path)
-	if err != nil {
-		t.Fatalf("resolving fixture path: %v", err)
-	}
-	return abs
+	return path
 }

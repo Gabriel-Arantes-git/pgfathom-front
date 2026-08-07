@@ -16,6 +16,16 @@ const (
 	// FindingOrphanReference is a reference column pointing at a table that no
 	// longer exists. Correctly rejected by validation, but a finding in itself.
 	FindingOrphanReference FindingKind = "orphan_reference"
+
+	// FindingPolymorphicPair is a reference column that only makes sense beside
+	// a discriminator column. Validation would reject it for low containment,
+	// which reads as "name coincidence" where a real relationship exists that
+	// this version does not model.
+	FindingPolymorphicPair FindingKind = "polymorphic_pair"
+
+	// FindingUnsupportedTarget is a name that matched a table this version
+	// cannot point at, typically because its key is composite.
+	FindingUnsupportedTarget FindingKind = "unsupported_target"
 )
 
 // Finding is a structural observation that did not require inference.
