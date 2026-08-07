@@ -195,3 +195,40 @@ func TestTrapScenario(t *testing.T) {
 			trap.MetaScore, real.MetaScore)
 	}
 }
+
+// TestRescoreReproducesGeneration pins the single-owner rule for the
+// combination: a layer that appends signals after generation recomposes
+// through Rescore, and that path must agree exactly with what generation
+// produced from the same signals.
+func TestRescoreReproducesGeneration(t *testing.T) {
+	res := generate(t, schema(
+		tbl("cliente"),
+		tbl("municipio"),
+		tbl("pedido", col("cliente_id"), col("municipio_id")),
+	))
+
+	for _, c := range append(append([]model.Candidate{}, res.Candidates...), res.Discarded...) {
+		got := c
+		infer.Rescore(&got)
+		if got.MetaScore != c.MetaScore {
+			t.Errorf("%s: rescore = %.4f, generation = %.4f; the two paths must agree",
+				c.Child, got.MetaScore, c.MetaScore)
+		}
+	}
+}
+
+// TestRescoreSaturatesAtZero pins the floor: accumulated penalties never push
+// a recomposed score negative, so the threshold keeps its meaning.
+func TestRescoreSaturatesAtZero(t *testing.T) {
+	c := model.Candidate{
+		Signals: []model.Signal{
+			{Kind: model.SigNormalizedName, Weight: 0.15},
+			{Kind: model.SigCardViolation, Weight: -0.40},
+			{Kind: model.SigRangeViolation, Weight: -0.30},
+		},
+	}
+	infer.Rescore(&c)
+	if c.MetaScore != 0 {
+		t.Errorf("score = %.4f, want zero: saturation holds on recomposition", c.MetaScore)
+	}
+}

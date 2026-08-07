@@ -54,3 +54,12 @@ func score(signals []model.Signal) float64 {
 		return total
 	}
 }
+
+// Rescore recomputes MetaScore from the candidate's signals, saturating exactly
+// as generation does. A layer that appends signals after generation must
+// recompose through here: a second implementation of the combination rule would
+// drift, and the threshold would change meaning depending on which layer
+// touched the candidate last.
+func Rescore(c *model.Candidate) {
+	c.MetaScore = score(c.Signals)
+}

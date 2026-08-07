@@ -14,6 +14,7 @@ import (
 	"github.com/lvcas-dotcom/pgfathom/internal/model"
 	"github.com/lvcas-dotcom/pgfathom/internal/profile"
 	"github.com/lvcas-dotcom/pgfathom/internal/report"
+	"github.com/lvcas-dotcom/pgfathom/internal/stats"
 )
 
 // validationStage is what discover currently promises, and refuses to promise
@@ -27,6 +28,7 @@ type discoverOptions struct {
 	format          string
 	includeRejected bool
 	noDetect        bool
+	noStats         bool
 }
 
 type connectionOptions struct {
@@ -93,6 +95,8 @@ Every score comes with the signals that produced it, so it can be argued with.`,
 		"also show candidates discarded by the threshold")
 	f.BoolVar(&opts.noDetect, "no-detect-naming", false,
 		"do not read naming conventions from the schema; use only the profile")
+	f.BoolVar(&opts.noStats, "no-stats", false,
+		"do not use planner statistics to prefilter candidates")
 
 	return cmd
 }
@@ -140,6 +144,24 @@ func runDiscover(ctx context.Context, streams *Streams, opts *discoverOptions) e
 
 	coverage := cat.Coverage
 	coverage.CandidatesFound = len(inferred.Candidates) + len(inferred.Discarded)
+
+	// The prefilter runs on the threshold survivors only: every candidate it
+	// kills is an anti-join that validation will not fire against someone's
+	// production server. A failure to read statistics is degraded to a warning,
+	// never to an opinion about candidates.
+	if !opts.noStats {
+		pre, err := stats.Prefilter(ctx, pool, cat.Schemas, inferred.Candidates, stats.Options{})
+		if err != nil {
+			warn("statistical prefilter skipped: " + err.Error())
+		} else {
+			inferred.Candidates = pre.Kept
+			inferred.Discarded = append(inferred.Discarded, pre.Rejected...)
+			coverage.StatsPrefilter = true
+			coverage.CandidatesStatsChecked = pre.Checked
+			coverage.CandidatesStatsRejected = len(pre.Rejected)
+			coverage.CandidatesWithoutStats = pre.NoStats
+		}
+	}
 
 	version, _, _ := buildinfo.Resolve()
 	result := model.NewResult(version, naming.Name, time.Now().UTC(), coverage)
