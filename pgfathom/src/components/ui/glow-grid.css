@@ -1,0 +1,67 @@
+/* Border-glow + spotlight, adapted from React Bits' MagicBento.
+   Palette swapped to the pgfathom accent and opacities cut to about a third.
+
+   Everything here is inside `@layer utilities` on purpose. Tailwind v4 puts
+   its own rules in cascade layers, and **unlayered CSS beats every layered
+   rule regardless of specificity**. An unlayered `position` declaration in
+   this file therefore silently overrode Tailwind's `.absolute`, which dropped
+   the hero graph's cards back into normal flow: each one stacked below the
+   last, so only the first card landed where its transform intended. Keeping
+   this file layered means normal specificity rules apply again. */
+
+@layer utilities {
+  /* No `position` rule lives here any more — the elements that need a
+     containing block for the ::after glow declare `relative` themselves, so
+     nothing here can fight a positioning utility. */
+  .glow-card {
+    --glow-x: 50%;
+    --glow-y: 50%;
+    --glow-intensity: 0;
+    --glow-radius: 320px;
+  }
+
+  .glow-card::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    padding: 1px;
+    background: radial-gradient(
+      var(--glow-radius) circle at var(--glow-x) var(--glow-y),
+      rgba(226, 72, 61, calc(var(--glow-intensity) * 0.55)) 0%,
+      rgba(226, 72, 61, calc(var(--glow-intensity) * 0.22)) 32%,
+      transparent 62%
+    );
+    border-radius: inherit;
+    -webkit-mask:
+      linear-gradient(#fff 0 0) content-box,
+      linear-gradient(#fff 0 0);
+    -webkit-mask-composite: xor;
+    mask:
+      linear-gradient(#fff 0 0) content-box,
+      linear-gradient(#fff 0 0);
+    mask-composite: exclude;
+    pointer-events: none;
+    z-index: 2;
+    transition: opacity 0.3s ease;
+  }
+
+  .glow-spotlight {
+    position: fixed;
+    width: 700px;
+    height: 700px;
+    border-radius: 50%;
+    pointer-events: none;
+    opacity: 0;
+    transform: translate(-50%, -50%);
+    mix-blend-mode: screen;
+    will-change: transform, opacity;
+    z-index: 30;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .glow-card::after,
+  .glow-spotlight {
+    display: none;
+  }
+}

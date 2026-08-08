@@ -1,0 +1,21 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120" width="120" height="120" role="img" aria-label="pgfathom">
+  <title>pgfathom</title>
+  <rect width="120" height="120" rx="24" fill="#1b1512"></rect>
+  <mask id="eyes" maskUnits="userSpaceOnUse" x="10" y="4" width="100" height="120">
+    <rect x="10" y="4" width="100" height="120" fill="#ffffff"></rect>
+    <g transform="translate(12,6) scale(0.96)" fill="#000000">
+      <ellipse cx="44" cy="33" rx="3.4" ry="2.5"></ellipse>
+      <ellipse cx="56" cy="33" rx="3.4" ry="2.5"></ellipse>
+    </g>
+  </mask>
+  <g mask="url(#eyes)">
+    <g transform="translate(12,6) scale(0.96)">
+      <g fill="#e2483d" stroke="#e2483d" stroke-width="4" stroke-linejoin="round" stroke-linecap="round">
+        <path transform="rotate(12 29 14)" d="M29 14L2 14Q2 48 29 48Z"></path>
+        <path transform="rotate(-12 71 14)" d="M71 14L98 14Q98 48 71 48Z"></path>
+        <path d="M36 26Q36 10 50 10Q64 10 64 26L64 50Q64 60 57 62L43 62Q36 60 36 50Z"></path>
+      </g>
+      <path d="M50 58L50 86" fill="none" stroke="#e2483d" stroke-width="14" stroke-linecap="round"></path>
+    </g>
+  </g>
+</svg>
