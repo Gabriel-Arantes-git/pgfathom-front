@@ -3,6 +3,10 @@
  * Deliberately NOT translated — rendering "QUEBRADO" where the CLI prints
  * "BROKEN" would show output the tool does not produce, and the whole page
  * rests on not misrepresenting it.
+ *
+ * Table/column identifiers are the one exception: those are localized copy
+ * (`reportRows` / `joinMiningExample` in copy.en.ts / copy.pt.ts), not part
+ * of this file, so the demo schema reads in the page's language.
  */
 
 export const REPO = 'https://github.com/lvcas-dotcom/pgfathom'
@@ -28,8 +32,6 @@ export type ReportRow =
   | { kind: 'head'; text: string; gap?: boolean }
   | {
       kind: 'row'
-      child: string
-      parent: string
       ratio: string
       note: string
       tone: 'broken' | 'confirmed' | 'weak'
@@ -37,56 +39,14 @@ export type ReportRow =
 
 export const REPORT: ReportRow[] = [
   { kind: 'head', text: 'BROKEN — the relationship is real, the integrity is not' },
-  {
-    kind: 'row',
-    child: 'os_servico.resp_tecnico',
-    parent: '→ funcionario.id',
-    ratio: '99.7%',
-    note: '1,284 orphans',
-    tone: 'broken',
-  },
-  {
-    kind: 'row',
-    child: 'pedido.cliente_id',
-    parent: '→ cliente.id',
-    ratio: '99.9%',
-    note: '37 orphans',
-    tone: 'broken',
-  },
-  {
-    kind: 'row',
-    child: 'lancamento.conta_id',
-    parent: '→ conta.id',
-    ratio: '94.2%',
-    note: '11,903 orphans',
-    tone: 'broken',
-  },
+  { kind: 'row', ratio: '99.7%', note: '1,284 orphans', tone: 'broken' },
+  { kind: 'row', ratio: '99.9%', note: '37 orphans', tone: 'broken' },
+  { kind: 'row', ratio: '94.2%', note: '11,903 orphans', tone: 'broken' },
   { kind: 'head', text: 'CONFIRMED — undeclared foreign key, no orphans found', gap: true },
-  {
-    kind: 'row',
-    child: 'item_pedido.pedido_id',
-    parent: '→ pedido.id',
-    ratio: '100.0%',
-    note: '0 orphans',
-    tone: 'confirmed',
-  },
-  {
-    kind: 'row',
-    child: 'endereco.municipio_id',
-    parent: '→ municipio.id',
-    ratio: '100.0%',
-    note: '0 orphans',
-    tone: 'confirmed',
-  },
+  { kind: 'row', ratio: '100.0%', note: '0 orphans', tone: 'confirmed' },
+  { kind: 'row', ratio: '100.0%', note: '0 orphans', tone: 'confirmed' },
   { kind: 'head', text: 'WEAK — insufficient evidence to conclude', gap: true },
-  {
-    kind: 'row',
-    child: 'documento.entidade_id',
-    parent: '→ entidade.id',
-    ratio: '41.0%',
-    note: 'polymorphic pair',
-    tone: 'weak',
-  },
+  { kind: 'row', ratio: '41.0%', note: 'polymorphic pair', tone: 'weak' },
 ]
 
 export const REPORT_PROFILE = 'profile pt-br (detected) · sampled validation (100k rows/table) · 312 tables'

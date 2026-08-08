@@ -83,6 +83,8 @@ export type Copy = {
   facts: Fact[]
   terminalCaption: string
   graph: Record<string, GraphLabel>
+  reportRows: { child: string; parent: string }[]
+  joinMiningExample: { child: string; parent: string }
 
   problemEyebrow: string
   problemTitle: string

@@ -207,26 +207,35 @@ export function Hero() {
               >
                 <p className="mt-0 mb-3.5 text-muted">{REPORT_PROFILE}</p>
 
-                {REPORT.map((row, i) =>
-                  row.kind === 'head' ? (
-                    <p
-                      key={`h-${i}`}
-                      className={`mb-1 text-muted ${row.gap ? 'mt-5' : 'mt-0'}`}
-                    >
-                      {row.text}
-                    </p>
-                  ) : (
-                    <div
-                      key={`${row.child}-${i}`}
-                      className="grid grid-cols-[minmax(0,1fr)_minmax(0,1fr)_76px_132px] gap-4 py-px"
-                    >
-                      <span className={`whitespace-pre ${TONE[row.tone].child}`}>{row.child}</span>
-                      <span className="whitespace-pre text-muted">{row.parent}</span>
-                      <span className={`text-right ${TONE[row.tone].ratio}`}>{row.ratio}</span>
-                      <span className={`text-right ${TONE[row.tone].note}`}>{row.note}</span>
-                    </div>
-                  ),
-                )}
+                {(() => {
+                  let rowIndex = -1
+                  return REPORT.map((row, i) => {
+                    if (row.kind === 'head') {
+                      return (
+                        <p
+                          key={`h-${i}`}
+                          className={`mb-1 text-muted ${row.gap ? 'mt-5' : 'mt-0'}`}
+                        >
+                          {row.text}
+                        </p>
+                      )
+                    }
+
+                    rowIndex += 1
+                    const { child, parent } = t.reportRows[rowIndex]
+                    return (
+                      <div
+                        key={`${child}-${i}`}
+                        className="grid grid-cols-[minmax(0,1fr)_minmax(0,1fr)_76px_132px] gap-4 py-px"
+                      >
+                        <span className={`whitespace-pre ${TONE[row.tone].child}`}>{child}</span>
+                        <span className="whitespace-pre text-muted">{parent}</span>
+                        <span className={`text-right ${TONE[row.tone].ratio}`}>{row.ratio}</span>
+                        <span className={`text-right ${TONE[row.tone].note}`}>{row.note}</span>
+                      </div>
+                    )
+                  })
+                })()}
 
                 {REPORT_COVERAGE.map((line, i) => (
                   <p key={line} className={`mb-0 text-muted ${i === 0 ? 'mt-5' : 'mt-0.5'}`}>

@@ -1,7 +1,7 @@
 import type { Copy } from './types'
 
 export const pt: Copy = {
-  docTitle: 'pgfathom — sonde a profundidade de um schema PostgreSQL legado',
+  docTitle: 'pgfathom: sonde a profundidade de um schema PostgreSQL legado',
   docDescription:
     'O pgfathom encontra os relacionamentos que seu banco PostgreSQL tem mas nunca declarou, e os prova contra os dados em vez de adivinhar pelos nomes das colunas.',
 
@@ -19,20 +19,20 @@ export const pt: Copy = {
 
   heroTitle: 'Sonde a profundidade de um schema PostgreSQL legado.',
   heroLead:
-    'O pgfathom encontra os relacionamentos que seu banco tem mas nunca declarou — e os prova contra os dados, em vez de adivinhar pelos nomes das colunas.',
+    'O pgfathom encontra os relacionamentos que seu banco tem mas nunca declarou, e então os prova contra os dados, em vez de adivinhar pelos nomes das colunas.',
   ctaDesign: 'Ler o design',
   copyCommand: 'Copiar comando',
   copiedCommand: 'Copiado',
   noticeTitle: 'Pré-release. Em desenvolvimento ativo.',
   noticeBody:
-    'O que roda hoje: o pgfathom audit ponta a ponta, e o pgfathom discover passando por geração de candidatos, pontuação, pré-filtro estatístico e validação contra os dados. A mineração de joins e os formatos finais de saída ainda estão pela frente. A saída de terminal mostrada aqui é o design alvo, não uma gravação. Os benchmarks de taxa de recuperação serão publicados quando a ferramenta rodar contra o corpus de referência — nenhum número é afirmado até lá.',
+    'O que roda hoje: o pgfathom audit ponta a ponta, e o pgfathom discover passando por geração de candidatos, pontuação, pré-filtro estatístico e validação contra os dados. A mineração de joins e os formatos finais de saída ainda estão pela frente. A saída de terminal mostrada aqui é o design alvo, não uma gravação. Os benchmarks de taxa de recuperação serão publicados quando a ferramenta rodar contra o corpus de referência. Nenhum número é afirmado até lá.',
   facts: [
     { label: 'Somente leitura', detail: 'Sem modo de escrita, sob nenhuma flag, em nenhuma fase' },
-    { label: 'Fica em memória', detail: 'Saem contagens e nomes — nunca um valor das suas tabelas' },
+    { label: 'Fica em memória', detail: 'Saem contagens e nomes, nunca um valor das suas tabelas' },
     { label: 'Quatro dependências', detail: 'Sem cgo. O go.mod é uma leitura curta' },
     { label: 'Apache-2.0', detail: 'Escolhida pela concessão explícita de patente' },
   ],
-  terminalCaption: 'pgfathom — saída alvo',
+  terminalCaption: 'pgfathom: saída alvo',
   graph: {
     pedido: { name: 'pedido', columns: ['id', 'cliente_id', 'emitido_em'] },
     cliente: { name: 'cliente', columns: ['id', 'razao_social', 'ativo'] },
@@ -51,13 +51,22 @@ export const pt: Copy = {
     sessao: { name: 'sessao', columns: ['id', 'usuario_id', 'expira_em'] },
     log_evento: { name: 'log_evento', columns: ['id', 'ator_id'] },
   },
+  reportRows: [
+    { child: 'os_servico.resp_tecnico', parent: '→ funcionario.id' },
+    { child: 'pedido.cliente_id', parent: '→ cliente.id' },
+    { child: 'lancamento.conta_id', parent: '→ conta.id' },
+    { child: 'item_pedido.pedido_id', parent: '→ pedido.id' },
+    { child: 'endereco.municipio_id', parent: '→ municipio.id' },
+    { child: 'documento.entidade_id', parent: '→ entidade.id' },
+  ],
+  joinMiningExample: { child: 'os_servico.resp_tecnico', parent: 'funcionario.id' },
 
   problemEyebrow: 'O problema',
   problemTitle: 'Bancos PostgreSQL antigos carregam mais estrutura do que declaram.',
   problemP1:
-    'Nenhuma foreign key. Mas cliente_id aponta para cliente.id em cada uma das linhas — o ORM da época nunca criou a constraint, ou alguém removeu as constraints para uma carga em massa e nunca as recolocou.',
+    'Nenhuma foreign key. Mas cliente_id aponta para cliente.id em cada uma das linhas. O ORM da época nunca criou a constraint, ou alguém removeu as constraints para uma carga em massa e nunca as recolocou.',
   problemP2:
-    'Duas coisas decorrem disso. Ninguém consegue ler o modelo, porque o \\d não mostra nada e sua ferramenta de ERD desenha uma página de caixas desconectadas. E como a constraint nunca esteve lá, nada jamais impediu a entrada de linhas órfãs — então elas provavelmente já entraram, anos atrás, em silêncio, e ninguém foi olhar.',
+    'Duas coisas decorrem disso. Ninguém consegue ler o modelo, porque o \\d não mostra nada e sua ferramenta de ERD desenha uma página de caixas desconectadas. E como a constraint nunca esteve lá, nada jamais impediu a entrada de linhas órfãs, então elas provavelmente já entraram, anos atrás, em silêncio, e ninguém foi olhar.',
   notValidLabel: 'A variante mais cruel',
   notValidBody:
     'Uma foreign key pode estar declarada e ainda assim não garantir nada, se foi criada NOT VALID e nunca validada. Ela aparece no \\d. Ela desenha uma seta no seu diagrama. Ela nunca verificou uma única linha preexistente.',
@@ -79,18 +88,18 @@ export const pt: Copy = {
       headline: 'Uma foreign key que alguém esqueceu de declarar.',
       body: 'A contenção se sustenta por linha e por valor distinto, sem órfãos encontrados.',
       output:
-        '→ o DDL, com o VALIDATE CONSTRAINT separado para que o ALTER TABLE inicial não segure um lock pesado — mais o CREATE INDEX CONCURRENTLY quando a coluna filha não tem índice.',
+        '→ o DDL, com o VALIDATE CONSTRAINT separado para que o ALTER TABLE inicial não segure um lock pesado, mais o CREATE INDEX CONCURRENTLY quando a coluna filha não tem índice.',
     },
     {
       tag: 'WEAK',
       headline: 'Evidência insuficiente para concluir.',
       body: 'Reportado em vez de descartado, com o motivo anexado.',
       output:
-        '→ a métrica que ficou aquém e qualquer padrão detectado — um par polimórfico, um alvo ambíguo.',
+        '→ a métrica que ficou aquém e qualquer padrão detectado: um par polimórfico, um alvo ambíguo.',
     },
   ],
   joinMining:
-    'Nenhuma heurística de correspondência de nomes no mundo encontra essa — resp_tecnico não se parece em nada com funcionario. O pgfathom a encontra lendo os predicados de join nas definições das suas próprias views e funções.',
+    'Nenhuma heurística de correspondência de nomes no mundo encontra essa: resp_tecnico não se parece em nada com funcionario. O pgfathom a encontra lendo os predicados de join nas definições das suas próprias views e funções.',
 
   safetyEyebrow: 'Segurança',
   safetyTitle:
@@ -100,12 +109,12 @@ export const pt: Copy = {
     {
       name: 'Somente leitura, estruturalmente',
       detail:
-        'O pgfathom nunca emite uma instrução que modifique o banco sob análise — não há modo de escrita, sob nenhuma flag, em nenhuma fase. A sessão define default_transaction_read_only, e uma role somente-leitura é a configuração recomendada. Ele emite arquivos .sql para você revisar e executar.',
+        'O pgfathom nunca emite uma instrução que modifique o banco sob análise. Não há modo de escrita, sob nenhuma flag, em nenhuma fase. A sessão define default_transaction_read_only, e uma role somente-leitura é a configuração recomendada. Ele emite arquivos .sql para você revisar e executar.',
     },
     {
       name: 'Seus dados nunca saem da memória',
       detail:
-        'O que sai são contagens, proporções e nomes de objetos — nunca um valor das suas tabelas, em nenhuma saída, log, campo JSON ou mensagem de erro. Garantido por um teste que serializa cada estrutura e varre o resultado, não por revisão de código.',
+        'O que sai são contagens, proporções e nomes de objetos, nunca um valor das suas tabelas, em nenhuma saída, log, campo JSON ou mensagem de erro. Garantido por um teste que serializa cada estrutura e varre o resultado, não por revisão de código.',
     },
     {
       name: 'Não vai derrubar seu servidor',
@@ -115,12 +124,12 @@ export const pt: Copy = {
     {
       name: 'Nenhuma afirmação sem evidência',
       detail:
-        'Execuções amostradas nunca podem reportar um relacionamento confirmado — só o --full pode provar a ausência de órfãos.',
+        'Execuções amostradas nunca podem reportar um relacionamento confirmado: só o --full pode provar a ausência de órfãos.',
     },
     {
       name: 'Silêncio nunca é atestado de saúde',
       detail:
-        'Tabelas puladas por falta de privilégio, candidatos que estouraram o tempo, schemas não cobertos — tudo isso aparece no bloco de cobertura em toda execução. Um relatório limpo significa "eu olhei e está limpo", nunca "eu não consegui olhar".',
+        'Tabelas puladas por falta de privilégio, candidatos que estouraram o tempo, schemas não cobertos: tudo isso aparece no bloco de cobertura em toda execução. Um relatório limpo significa "eu olhei e está limpo", nunca "eu não consegui olhar".',
     },
   ],
 
@@ -143,7 +152,7 @@ export const pt: Copy = {
       num: '03',
       name: 'Gerar candidatos',
       detail:
-        'Afixos de nomes de coluna são removidos e comparados com nomes de tabela no singular usando um perfil de nomenclatura — um arquivo de configuração, não regras fixas no código.',
+        'Afixos de nomes de coluna são removidos e comparados com nomes de tabela no singular usando um perfil de nomenclatura: um arquivo de configuração, não regras fixas no código.',
     },
     {
       num: '04',
@@ -161,7 +170,7 @@ export const pt: Copy = {
       num: '06',
       name: 'Validar contra os dados',
       detail:
-        'Um agregado por candidato sobrevivente — nunca buscando linhas, só contagens. A contenção é reportada por linha e por valor distinto, porque um valor ruim repetido um milhão de vezes e um milhão de valores ruins raros são problemas diferentes.',
+        'Um agregado por candidato sobrevivente, nunca buscando linhas, só contagens. A contenção é reportada por linha e por valor distinto, porque um valor ruim repetido um milhão de vezes e um milhão de valores ruins raros são problemas diferentes.',
     },
   ],
 
@@ -171,14 +180,14 @@ export const pt: Copy = {
   profilesP1:
     'Regras de afixo e plural vivem em TOML, não em Go, então ensinar uma nova convenção ao pgfathom é um arquivo de configuração, não um patch.',
   profilesP2:
-    'A normalização retorna um conjunto de formas candidatas em vez de uma só, então plurais ambíguos não custam nada em recall — toda forma é tentada, e a que casou é reportada. Adicionar um perfil para o seu idioma é a contribuição mais fácil possível: um arquivo TOML e uma tabela de casos de teste.',
+    'A normalização retorna um conjunto de formas candidatas em vez de uma só, então plurais ambíguos não custam nada em recall. Toda forma é tentada, e a que casou é reportada. Adicionar um perfil para o seu idioma é a contribuição mais fácil possível: um arquivo TOML e uma tabela de casos de teste.',
   profilesYours: 'seu idioma',
 
   ciEyebrow: 'Integração contínua',
   ciTitle: 'Quebre o build quando o schema derivar.',
   ciBadge: 'planejado · depois da v0.1',
   ciP1:
-    'O pgfathom check --baseline compara uma execução com um modelo versionado e sai com código diferente de zero quando o schema mudou. Ainda não disponível — esta é a forma que está especificada.',
+    'O pgfathom check --baseline compara uma execução com um modelo versionado e sai com código diferente de zero quando o schema mudou. Ainda não disponível: esta é a forma que está especificada.',
   ciRules: [
     { code: 'exit 1', detail: 'Um novo relacionamento não declarado apareceu desde o baseline' },
     { code: 'exit 1', detail: 'A contagem de órfãos cresceu em um relacionamento já quebrado' },
@@ -188,7 +197,7 @@ export const pt: Copy = {
   priorEyebrow: 'Trabalhos anteriores',
   priorTitle: 'Não é ciência nova, e diz isso.',
   priorLead:
-    'Contenção é conhecida na literatura de data profiling como inclusion dependency — a parte automaticamente testável de uma foreign key. O pgfathom deliberadamente não compete com ferramentas que já resolveram bem os seus problemas.',
+    'Contenção é conhecida na literatura de data profiling como inclusion dependency, a parte automaticamente testável de uma foreign key. O pgfathom deliberadamente não compete com ferramentas que já resolveram bem os seus problemas.',
   colTool: 'Ferramenta',
   colDoes: 'O que faz bem',
   colOverlap: 'Onde o pgfathom difere',
@@ -230,7 +239,7 @@ export const pt: Copy = {
   benchTitle: 'Remova todas as foreign keys e conte quantas voltam.',
   benchBadge: 'protótipo · números de exemplo',
   benchLead:
-    'O corpus é público — GitLab, Odoo, Discourse, Redmine, Mastodon — para qualquer um poder reproduzir a execução. Os resultados são divididos entre o que a correspondência de nomes recupera sozinha e o que a evidência de uso soma em cima, porque essa diferença é exatamente o que a mineração de joins existe para fechar.',
+    'O corpus é público (GitLab, Odoo, Discourse, Redmine, Mastodon), para qualquer um poder reproduzir a execução. Os resultados são divididos entre o que a correspondência de nomes recupera sozinha e o que a evidência de uso soma em cima, porque essa diferença é exatamente o que a mineração de joins existe para fechar.',
   colSchema: 'Schema',
   colRecovered: 'Foreign keys recuperadas',
   benchLegend: {
@@ -240,7 +249,7 @@ export const pt: Copy = {
   benchAggregate: 'média do corpus',
   metricLabel: 'Taxa de recuperação',
   metricBody:
-    'Pegue um schema com foreign keys completas, remova todas elas, rode o pgfathom e conte quantas voltam. Contra um corpus público — GitLab, Odoo, Discourse, Redmine, Mastodon — para qualquer um poder reproduzir.',
+    'Pegue um schema com foreign keys completas, remova todas elas, rode o pgfathom e conte quantas voltam. Contra um corpus público (GitLab, Odoo, Discourse, Redmine, Mastodon), para qualquer um poder reproduzir.',
   fpLabel: 'Zero falsos positivos confirmados',
   fpBody:
     'O recall vai ficar bem abaixo de 100%, e isso é esperado. A métrica sem tolerância é a outra: um relacionamento perdido custa um achado, um errado confirmado custa a ferramenta.',

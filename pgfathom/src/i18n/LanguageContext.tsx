@@ -21,9 +21,9 @@ function readInitialLang(): Lang {
     const saved = window.localStorage.getItem(STORAGE_KEY)
     if (saved === 'en' || saved === 'pt') return saved
   } catch {
-    // localStorage can throw in private mode — fall through to detection
+    // localStorage can throw in private mode — fall through to default
   }
-  return navigator.language?.toLowerCase().startsWith('pt') ? 'pt' : 'en'
+  return 'en'
 }
 
 export function LanguageProvider({ children }: { children: ReactNode }) {
