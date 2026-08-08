@@ -120,6 +120,23 @@ finds it by reading the join predicates out of your own view and function defini
 
 Output comes as a terminal report, a versioned JSON model, and reviewable `.sql` artifacts.
 
+```console
+$ pgfathom discover --full --out ./findings
+```
+
+```
+  findings/confirmed.sql   2
+  findings/broken.sql      3
+
+  Review every file before running any of it.
+```
+
+The `.sql` files are written, never piped. Each one opens with the version, the timestamp
+and the validation mode that produced it, and with the reminder that nothing inside was
+meant to be run unread. DDL for a broken relationship stays commented out — it cannot pass
+while an orphan remains, and deciding what happens to an orphan row is a call about your
+domain, not one this tool is entitled to make.
+
 ## Safety
 
 This tool is designed to be pointed at a production database owned by someone who is
@@ -249,9 +266,9 @@ like from a schema that finally knows its own relationships.
 | 3 | Name-based candidate inference | Done |
 | 3.5 | Naming-convention detection from the schema itself | Done |
 | 4 | Planner-statistics prefilter | Done |
-| 5 | Data validation · `pgfathom discover` | In progress |
+| 5 | Data validation · `pgfathom discover` | Done |
 | 6 | Join mining from views and functions | Planned |
-| 7 | Terminal, JSON and SQL output | Planned |
+| 7 | Terminal, JSON and SQL output | Done |
 | 8 | Benchmark corpus and release | Planned |
 
 Full detail in [`docs/ROADMAP.md`](docs/ROADMAP.md).
