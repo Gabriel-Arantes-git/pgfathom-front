@@ -9,6 +9,7 @@ import { Profiles } from './components/sections/Profiles'
 import { Ci } from './components/sections/Ci'
 import { PriorArt } from './components/sections/PriorArt'
 import { Benchmark } from './components/sections/Benchmark'
+import { Contributors } from './components/sections/Contributors'
 import { FinalCta } from './components/sections/FinalCta'
 
 function App() {
@@ -31,6 +32,7 @@ function App() {
         <Ci />
         <PriorArt />
         <Benchmark />
+        <Contributors />
         <FinalCta />
       </main>
 

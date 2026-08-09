@@ -10,6 +10,7 @@ export const pt: Copy = {
   navSafety: 'Segurança',
   navHow: 'Como funciona',
   navBenchmark: 'Benchmark',
+  navContributors: 'Contribuidores',
   navMenu: 'Abrir menu',
   navClose: 'Fechar menu',
 
@@ -253,6 +254,16 @@ export const pt: Copy = {
   fpLabel: 'Zero falsos positivos confirmados',
   fpBody:
     'O recall vai ficar bem abaixo de 100%, e isso é esperado. A métrica sem tolerância é a outra: um relacionamento perdido custa um achado, um errado confirmado custa a ferramenta.',
+
+  contributorsEyebrow: 'Contribuidores',
+  contributorsTitle: 'As pessoas de onde vieram os commits.',
+  contributorsLead:
+    'Lida do próprio repositório e ordenada por commits, então a lista é o que o histórico disser no dia em que você abrir a página. Ninguém precisa lembrar de atualizar.',
+  contributorsPanelLabel: 'Trabalhando nisso',
+  contributorsMainCommitsLabel: 'Commits na main',
+  contributorsCommitsLabel: 'commits',
+  contributorsProfileLabel: 'Abrir {login} no GitHub',
+  contributorsSelectLabel: 'Mostrar {login}',
 
   ctaTitle: 'O design é o momento mais barato para mudá-lo.',
   ctaBody:

@@ -18,6 +18,7 @@ export function Navbar() {
     { href: '#safety', label: t.navSafety },
     { href: '#pipeline', label: t.navHow },
     { href: '#benchmark', label: t.navBenchmark },
+    { href: '#contributors', label: t.navContributors },
   ]
 
   // The mobile overlay covers the page — don't let the body scroll behind it.

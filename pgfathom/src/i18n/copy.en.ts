@@ -10,6 +10,7 @@ export const en: Copy = {
   navSafety: 'Safety',
   navHow: 'How it works',
   navBenchmark: 'Benchmark',
+  navContributors: 'Contributors',
   navMenu: 'Open menu',
   navClose: 'Close menu',
 
@@ -257,6 +258,16 @@ export const en: Copy = {
   fpLabel: 'Zero confirmed false positives',
   fpBody:
     'Recall will settle well below 100%, and that is expected. The metric with no tolerance is the other one: a missed relationship costs you a finding, a wrong one confirmed costs you the tool.',
+
+  contributorsEyebrow: 'Contributors',
+  contributorsTitle: 'The people the commits came from.',
+  contributorsLead:
+    'Read from the repository itself and ordered by commits, so the list is whatever the history says it is on the day you load the page. Nobody has to remember to update it.',
+  contributorsPanelLabel: 'Working on it',
+  contributorsMainCommitsLabel: 'Commits on main',
+  contributorsCommitsLabel: 'commits',
+  contributorsProfileLabel: 'Open {login} on GitHub',
+  contributorsSelectLabel: 'Show {login}',
 
   ctaTitle: 'The design is the cheapest moment to change it.',
   ctaBody:

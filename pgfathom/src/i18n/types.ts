@@ -53,6 +53,17 @@ export type GraphLabel = {
 }
 
 /**
+ * A repository contributor, already normalized from the GitHub API's shape.
+ * `login` is an identifier, never translated copy.
+ */
+export type Contributor = {
+  login: string
+  profileUrl: string
+  avatarUrl: string
+  contributions: number
+}
+
+/**
  * The shape of a full translation. `copy.en` is the source of truth and
  * `copy.pt` is typed against it, so a missing key fails the build instead of
  * shipping a raw key to production.
@@ -66,6 +77,7 @@ export type Copy = {
   navSafety: string
   navHow: string
   navBenchmark: string
+  navContributors: string
   navMenu: string
   navClose: string
 
@@ -141,6 +153,17 @@ export type Copy = {
   metricBody: string
   fpLabel: string
   fpBody: string
+
+  contributorsEyebrow: string
+  contributorsTitle: string
+  contributorsLead: string
+  contributorsPanelLabel: string
+  contributorsMainCommitsLabel: string
+  contributorsCommitsLabel: string
+  /** Contains `{login}`, replaced with the contributor's login at render. */
+  contributorsProfileLabel: string
+  /** Contains `{login}`. Labels the card, which selects rather than navigates. */
+  contributorsSelectLabel: string
 
   ctaTitle: string
   ctaBody: string
