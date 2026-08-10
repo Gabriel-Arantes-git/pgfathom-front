@@ -31,7 +31,6 @@ export function Hero() {
       setCopied(true)
       setTimeout(() => setCopied(false), 2000)
     } catch {
-      // Clipboard can be blocked; the command is visible and selectable anyway.
     }
   }
 
@@ -170,7 +169,6 @@ export function Hero() {
           </p>
         </div>
 
-        {/* Target terminal output. */}
         <GlowGrid className="fade-up mt-14" intensity={0.75} style={{ animationDelay: '330ms' }}>
           <div
             className={glowCard(
@@ -252,7 +250,6 @@ export function Hero() {
         </GlowGrid>
       </div>
 
-      {/* Four facts strip, flush to the section's bottom edge. */}
       <div className="border-t border-hair">
         <div className="mx-auto grid max-w-[1140px] grid-cols-1 sm:grid-cols-2 lg:grid-cols-4">
           {t.facts.map((fact, i) => (

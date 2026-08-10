@@ -60,7 +60,6 @@ export function Verdicts() {
         })}
       </GlowGrid>
 
-      {/* The relationship no name-matching heuristic can reach. */}
       <Reveal className="mt-6 flex flex-wrap items-center gap-5 rounded-[5px] border border-hair bg-ink-700 p-6.5">
         <code className="font-mono text-[14px] whitespace-nowrap text-bone">
           {t.joinMiningExample.child} <span className="text-accent">→</span>{' '}

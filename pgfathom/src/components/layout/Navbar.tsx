@@ -21,7 +21,6 @@ export function Navbar() {
     { href: '#contributors', label: t.navContributors },
   ]
 
-  // The mobile overlay covers the page — don't let the body scroll behind it.
   useEffect(() => {
     document.body.style.overflow = menuOpen ? 'hidden' : ''
     return () => {
@@ -110,7 +109,6 @@ export function Navbar() {
         </nav>
       </header>
 
-      {/* Mobile overlay */}
       <div
         className={`fixed inset-0 z-60 bg-ink-800 transition-opacity duration-500 md:hidden ${
           menuOpen ? 'pointer-events-auto opacity-100' : 'pointer-events-none opacity-0'

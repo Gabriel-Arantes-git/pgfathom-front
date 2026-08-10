@@ -58,8 +58,6 @@ function readContributorsCache(): Contributor[] | null {
 
     return cached.list
   } catch {
-    // sessionStorage throws in private mode and JSON.parse throws on a
-    // hand-edited entry — either way the network path is still available
     return null
   }
 }
@@ -69,7 +67,6 @@ function writeContributorsCache(list: Contributor[]) {
     const cached: CachedContributors = { savedAt: Date.now(), list }
     window.sessionStorage.setItem(CONTRIBUTORS_CACHE_KEY, JSON.stringify(cached))
   } catch {
-    // caching is a nicety, not a requirement
   }
 }
 
