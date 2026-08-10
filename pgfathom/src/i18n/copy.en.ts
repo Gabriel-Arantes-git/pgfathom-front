@@ -262,7 +262,7 @@ export const en: Copy = {
   contributorsEyebrow: 'Contributors',
   contributorsTitle: 'The people the commits came from.',
   contributorsLead:
-    'Read from the repository itself and ordered by commits, so the list is whatever the history says it is on the day you load the page. Nobody has to remember to update it.',
+    'A list of the contributors who have actively worked with us on the GitHub repository. If you\'d like to contribute, feel free to open an issue or submit a pull request. The repository is public and open to everyone to help improve it.',
   contributorsPanelLabel: 'Working on it',
   contributorsMainCommitsLabel: 'Commits on main',
   contributorsCommitsLabel: 'commits',

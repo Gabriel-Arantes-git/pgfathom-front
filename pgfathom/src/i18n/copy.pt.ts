@@ -3,7 +3,7 @@ import type { Copy } from './types'
 export const pt: Copy = {
   docTitle: 'pgfathom: sonde a profundidade de um schema PostgreSQL legado',
   docDescription:
-    'O pgfathom encontra os relacionamentos que seu banco PostgreSQL tem mas nunca declarou, e os prova contra os dados em vez de adivinhar pelos nomes das colunas.',
+    'O pgfathom encontra os relacionamentos que seu banco PostgreSQL tem mas nunca declarou, e os compara contra os dados em vez de adivinhar pelos nomes das colunas.',
 
   navProblem: 'Problema',
   navVerdicts: 'O que faz',
@@ -20,7 +20,7 @@ export const pt: Copy = {
 
   heroTitle: 'Sonde a profundidade de um schema PostgreSQL legado.',
   heroLead:
-    'O pgfathom encontra os relacionamentos que seu banco tem mas nunca declarou, e então os prova contra os dados, em vez de adivinhar pelos nomes das colunas.',
+    'O pgfathom encontra os relacionamentos que seu banco tem mas nunca declarou, e então os compara contra os dados, em vez de adivinhar pelos nomes das colunas.',
   ctaDesign: 'Ler o design',
   copyCommand: 'Copiar comando',
   copiedCommand: 'Copiado',
@@ -73,9 +73,9 @@ export const pt: Copy = {
     'Uma foreign key pode estar declarada e ainda assim não garantir nada, se foi criada NOT VALID e nunca validada. Ela aparece no \\d. Ela desenha uma seta no seu diagrama. Ela nunca verificou uma única linha preexistente.',
 
   verdictsEyebrow: 'O que faz',
-  verdictsTitle: 'Três veredictos, três respostas diferentes.',
+  verdictsTitle: 'Três vereditos, três respostas diferentes.',
   verdictsLead:
-    'Cada relacionamento inferido carrega um veredicto e a métrica por trás dele. Candidatos fracos e rejeitados também são reportados, para você nunca ficar se perguntando por que uma coluna óbvia foi ignorada.',
+    'Cada relacionamento inferido carrega um veredito e a métrica por trás dele. Candidatos fracos e rejeitados também são reportados, para você nunca ficar se perguntando por que uma coluna óbvia foi ignorada.',
   verdicts: [
     {
       tag: 'BROKEN',
@@ -104,7 +104,7 @@ export const pt: Copy = {
 
   safetyEyebrow: 'Segurança',
   safetyTitle:
-    'Feito para ser apontado para um banco de produção de alguém que está nervoso com isso.',
+    'Feito para ser apontado para um banco de produção sem motivos para ter receio com isso.',
   safetyLead: 'Cada garantia abaixo é um requisito rígido na especificação, não uma meta.',
   safety: [
     {
@@ -185,7 +185,7 @@ export const pt: Copy = {
   profilesYours: 'seu idioma',
 
   ciEyebrow: 'Integração contínua',
-  ciTitle: 'Quebre o build quando o schema derivar.',
+  ciTitle: 'REportagem de erros no build quando o schema derivar.',
   ciBadge: 'planejado · depois da v0.1',
   ciP1:
     'O pgfathom check --baseline compara uma execução com um modelo versionado e sai com código diferente de zero quando o schema mudou. Ainda não disponível: esta é a forma que está especificada.',
@@ -256,9 +256,9 @@ export const pt: Copy = {
     'O recall vai ficar bem abaixo de 100%, e isso é esperado. A métrica sem tolerância é a outra: um relacionamento perdido custa um achado, um errado confirmado custa a ferramenta.',
 
   contributorsEyebrow: 'Contribuidores',
-  contributorsTitle: 'As pessoas de onde vieram os commits.',
+  contributorsTitle: 'Maiores Contribuidores do repositório.',
   contributorsLead:
-    'Lida do próprio repositório e ordenada por commits, então a lista é o que o histórico disser no dia em que você abrir a página. Ninguém precisa lembrar de atualizar.',
+    'Lista dos contribuidores que mais avidamente trabalharam conosco no repositório do GitHub. Se você quiser contribuir, abra uma issue ou um pull request. O repositório é público e aberto a todos para melhorias.',
   contributorsPanelLabel: 'Trabalhando nisso',
   contributorsMainCommitsLabel: 'Commits na main',
   contributorsCommitsLabel: 'commits',
