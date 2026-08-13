@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { useCopy } from '../../i18n/LanguageContext'
-import { useScrolled, useScrollProgress } from '../../hooks/useScrolled'
+import { useScrolled, useScrollProgress, useIsScrolling } from '../../hooks/useScrolled'
 import { LanguageSwitch } from '../ui/LanguageSwitch'
 import { Wordmark } from '../ui/Wordmark'
 import { GithubIcon, MenuIcon, CloseIcon } from '../ui/icons'
@@ -10,6 +10,7 @@ export function Navbar() {
   const t = useCopy()
   const scrolled = useScrolled(20)
   const progress = useScrollProgress()
+  const isScrolling = useIsScrolling()
   const [menuOpen, setMenuOpen] = useState(false)
 
   const links = [
@@ -36,7 +37,7 @@ export function Navbar() {
         }`}
       >
         <nav
-          className={`glass mx-auto transition-all duration-500 ease-[cubic-bezier(.4,0,.2,1)] ${
+          className={`${isScrolling ? 'glass-scrolling' : 'glass'} mx-auto transition-all duration-500 ease-[cubic-bezier(.4,0,.2,1)] ${
             scrolled
               ? 'max-w-[1120px] rounded-2xl border border-hair shadow-[0_24px_60px_-30px_rgba(0,0,0,0.9)]'
               : 'max-w-[1140px] rounded-none border-b border-hair/70'

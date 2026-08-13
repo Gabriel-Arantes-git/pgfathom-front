@@ -13,12 +13,20 @@ type Options = {
  * Types `text` out one character at a time. Returns the visible slice and a
  * `done` flag used to fade the report block in after the command finishes.
  * Under prefers-reduced-motion the final state is applied immediately.
+ *
+ * Resets on every `text` change, not just on mount: the CLI terminal reuses
+ * one hook instance across different commands, and a stale `typed` count
+ * would otherwise slice a new, shorter string down to its full length
+ * instantly instead of retyping it.
  */
 export function useTypewriter(text: string, { start = 600, step = 42, settle = 500 }: Options = {}) {
   const [typed, setTyped] = useState(0)
   const [done, setDone] = useState(false)
 
   useEffect(() => {
+    setTyped(0)
+    setDone(false)
+
     if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
       setTyped(text.length)
       setDone(true)

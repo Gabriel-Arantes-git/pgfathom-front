@@ -94,8 +94,11 @@ export type Copy = {
   noticeBody: string
   facts: Fact[]
   terminalCaption: string
+  cliPlaceholder: string
+  cliInputAria: string
+  cliRunAria: string
+  cliEmptyHint: string
   graph: Record<string, GraphLabel>
-  reportRows: { child: string; parent: string }[]
   joinMiningExample: { child: string; parent: string }
 
   problemEyebrow: string

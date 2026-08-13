@@ -127,18 +127,38 @@ export function SchemaGraph({ className }: { className?: string }) {
       ),
     )
 
-    let frame = 0
-    let inView = true
-    let pageVisible = !document.hidden
-    const start = performance.now()
+    /**
+     * Everything about an edge's curve — its control point, its two endpoints,
+     * the fixed point each orphan dot falls from — is a function of card
+     * centres and half-extents alone, both of which only change on resize or
+     * once the webfont settles. Recomputing that geometry every animation
+     * frame, and rewriting the path's `d` attribute (an SVG reparse, the
+     * costliest write in this loop) 60 times a second for a curve that never
+     * moves, was burning main-thread time the browser needed for scrolling —
+     * felt as dropped frames while this graph was on screen. `computeGeometry`
+     * does that work once per layout change instead; the per-frame loop below
+     * touches only what actually animates: draw progress, fade, the lock's
+     * pulse, and how far each orphan has fallen.
+     */
+    type EdgeGeom = {
+      ctrlX: number
+      ctrlY: number
+      p0: { x: number; y: number }
+      p1: { x: number; y: number }
+      orphanBase: { x: number; y: number }[]
+    }
+    const edgeGeom: (EdgeGeom | null)[] = GRAPH_EDGES.map(() => null)
 
-    const drawEdges = (elapsed: number) => {
+    const computeGeometry = () => {
       GRAPH_EDGES.forEach((edge, i) => {
         const path = paths[i]
         const lock = locks[i]
         const from = cards.get(edge.from)
         const to = cards.get(edge.to)
-        if (!path || !from || !to) return
+        if (!path || !from || !to) {
+          edgeGeom[i] = null
+          return
+        }
 
         // Bow the line perpendicular to itself so parallel edges stay legible.
         const vx = to.x - from.x
@@ -154,6 +174,33 @@ export function SchemaGraph({ className }: { className?: string }) {
         const p1 = exitPoint(to.x, to.y, to.hw, to.hh, ctrlX, ctrlY)
 
         path.setAttribute('d', `M ${p0.x} ${p0.y} Q ${ctrlX} ${ctrlY} ${p1.x} ${p1.y}`)
+
+        if (lock) {
+          lock.setAttribute('cx', String(p1.x))
+          lock.setAttribute('cy', String(p1.y))
+        }
+
+        const orphanBase = Array.from({ length: ORPHANS_PER_EDGE }, (_, o) => {
+          const at = bezier(0.32 + o * 0.18, p0.x, p0.y, ctrlX, ctrlY, p1.x, p1.y)
+          orphanDots[i][o]?.setAttribute('cx', String(at.x))
+          return at
+        })
+
+        edgeGeom[i] = { ctrlX, ctrlY, p0, p1, orphanBase }
+      })
+    }
+
+    let frame = 0
+    let inView = true
+    let pageVisible = !document.hidden
+    const start = performance.now()
+
+    const drawEdges = (elapsed: number) => {
+      GRAPH_EDGES.forEach((edge, i) => {
+        const path = paths[i]
+        const lock = locks[i]
+        const geom = edgeGeom[i]
+        if (!path || !geom) return
 
         // Each edge on its own clock: draw → hold → fade → pause → repeat.
         const period = DRAW + edge.hold + edge.fade + edge.pause
@@ -184,8 +231,6 @@ export function SchemaGraph({ className }: { className?: string }) {
         if (lock) {
           const pulse = clamp01(settled / 0.55)
           const showing = !reduced && connected && pulse < 1
-          lock.setAttribute('cx', String(p1.x))
-          lock.setAttribute('cy', String(p1.y))
           lock.setAttribute('r', String(3 + pulse * 15))
           lock.style.opacity = showing ? String((1 - pulse) * 0.75) : '0'
         }
@@ -207,9 +252,7 @@ export function SchemaGraph({ className }: { className?: string }) {
           }
 
           const k = local % 1
-          const at = bezier(0.32 + o * 0.18, p0.x, p0.y, ctrlX, ctrlY, p1.x, p1.y)
-          dot.setAttribute('cx', String(at.x))
-          dot.setAttribute('cy', String(at.y + k * k * 70))
+          dot.setAttribute('cy', String(geom.orphanBase[o].y + k * k * 70))
           dot.style.opacity = String((1 - k) * 0.9 * alpha)
         }
       })
@@ -221,6 +264,7 @@ export function SchemaGraph({ className }: { className?: string }) {
     }
 
     measure()
+    computeGeometry()
     drawEdges(0)
 
     // Cards are measured before Geist Mono arrives; the fallback font gives a
@@ -230,12 +274,14 @@ export function SchemaGraph({ className }: { className?: string }) {
     document.fonts?.ready.then(() => {
       if (!disposed) {
         measure()
+        computeGeometry()
         drawEdges((performance.now() - start) / 1000)
       }
     })
 
     const resizeObserver = new ResizeObserver(() => {
       measure()
+      computeGeometry()
       drawEdges((performance.now() - start) / 1000)
     })
     resizeObserver.observe(root)

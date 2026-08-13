@@ -26,14 +26,18 @@ export const en: Copy = {
   copiedCommand: 'Copied',
   noticeTitle: 'Pre-release. Under active development.',
   noticeBody:
-    'What runs today: pgfathom audit end to end, and pgfathom discover through candidate generation, scoring, the statistical prefilter and validation against the data. Join mining and the final output formats are still ahead. Terminal output shown here is the target design, not a recording. Recovery-rate benchmarks will be published once the tool runs against the reference corpus. No numbers are claimed until then.',
+    'v0.1.2. What ships today, end to end: pgfathom audit, and pgfathom discover through join mining, scoring, the statistical prefilter, validation against the data, and terminal, JSON and SQL output. The terminal below is interactive and its outputs are the tool’s real output, not a mockup — run discover, audit, help or version yourself. Recovery-rate benchmarks are measured against a public corpus (GitLab, a municipal pt-BR system, Discourse) and reproducible with `make benchmark`.',
   facts: [
     { label: 'Read-only', detail: 'No write mode, under any flag, in any phase' },
     { label: 'Stays in memory', detail: 'Counts and names out, never a value from your tables' },
     { label: 'Four dependencies', detail: 'No cgo. go.mod is a short read' },
     { label: 'Apache-2.0', detail: 'Chosen for the explicit patent grant' },
   ],
-  terminalCaption: 'pgfathom: target output',
+  terminalCaption: 'pgfathom — try it',
+  cliPlaceholder: 'type a command…',
+  cliInputAria: 'Run a pgfathom command',
+  cliRunAria: 'Run command',
+  cliEmptyHint: 'discover · audit · help · version',
   // work_order.tech_lead → employee.id keeps the point of the Portuguese
   // original: the column name bears no resemblance to the table it points at.
   graph: {
@@ -56,14 +60,6 @@ export const en: Copy = {
     sessao: { name: 'session', columns: ['id', 'user_id', 'expires_at'] },
     log_evento: { name: 'audit_log', columns: ['id', 'actor_id'] },
   },
-  reportRows: [
-    { child: 'work_order.tech_lead', parent: '→ employee.id' },
-    { child: 'order.customer_id', parent: '→ customer.id' },
-    { child: 'ledger_entry.account_id', parent: '→ account.id' },
-    { child: 'order_item.order_id', parent: '→ order.id' },
-    { child: 'address.city_id', parent: '→ city.id' },
-    { child: 'document.entity_id', parent: '→ entity.id' },
-  ],
   joinMiningExample: { child: 'work_order.tech_lead', parent: 'employee.id' },
 
   problemEyebrow: 'The problem',
@@ -242,19 +238,19 @@ export const en: Copy = {
 
   benchEyebrow: 'How correctness is measured',
   benchTitle: 'Drop every foreign key, then count how many come back.',
-  benchBadge: 'prototype · placeholder numbers',
+  benchBadge: 'public corpus · make benchmark',
   benchLead:
-    'The corpus is public (GitLab, Odoo, Discourse, Redmine, Mastodon), so anyone can reproduce the run. Results are split into what name matching recovers alone and what usage evidence adds on top, because that gap is precisely what join mining exists to close.',
+    'The corpus is public (GitLab, a municipal pt-BR system, Discourse), measured in the partial regime — half the declared keys removed, the other half left for detection to read, the ordinary case — and reproducible with `make benchmark`. Results are split into what the naming profile recovers alone and what schema detection and join mining add on top.',
   colSchema: 'Schema',
   colRecovered: 'Foreign keys recovered',
   benchLegend: {
-    byName: 'Name matching',
-    byEvidence: 'Usage evidence',
+    byName: 'Profile alone',
+    byEvidence: '+ detection & join mining',
   },
   benchAggregate: 'corpus average',
   metricLabel: 'Recovery rate',
   metricBody:
-    'Take a schema with complete foreign keys, drop every one of them, run pgfathom, and count how many come back. Against a public corpus (GitLab, Odoo, Discourse, Redmine, Mastodon), so anyone can reproduce it.',
+    'Take a schema with complete foreign keys, drop half of them, run pgfathom, and count how many come back. Against a public corpus (GitLab, a municipal pt-BR system, Discourse), so anyone can reproduce it with `make benchmark`.',
   fpLabel: 'Zero confirmed false positives',
   fpBody:
     'Recall will settle well below 100%, and that is expected. The metric with no tolerance is the other one: a missed relationship costs you a finding, a wrong one confirmed costs you the tool.',

@@ -58,7 +58,12 @@ export function LanguageSwitch({ size = 20, withLabels = false }: Props) {
     <div
       role="group"
       aria-label={t.langSwitchLabel}
-      className="glass relative flex items-center rounded-full border border-hair p-1"
+      // Plain background rather than `.glass`: this pill already sits on top
+      // of the navbar's own (blurred or, mid-scroll, solid) background, so a
+      // second backdrop-filter here was a redundant blur pass — real
+      // compositing cost for a difference nobody could see on a small pill
+      // over an already-tinted backdrop.
+      className="relative flex items-center rounded-full border border-hair bg-ink-600/85 p-1"
     >
       <span
         aria-hidden="true"

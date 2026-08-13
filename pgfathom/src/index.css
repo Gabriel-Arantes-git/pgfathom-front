@@ -18,6 +18,9 @@
   --color-accent: #e2483d;
   --color-accent-hi: #ef5a4f;
 
+  /* CONFIRMED verdicts in the CLI terminal — internal/report/style.go's BrandAqua */
+  --color-confirm: #7ec9b8;
+
   --font-sans: 'Geist', ui-sans-serif, system-ui, sans-serif;
   --font-mono: 'Geist Mono', ui-monospace, 'JetBrains Mono', monospace;
 
@@ -119,11 +122,49 @@
     background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E");
   }
 
-  /* Glass — navbar, language switch, floating chrome */
+  /* Glass — navbar, floating chrome */
   .glass {
     background: rgba(27, 21, 18, 0.72);
     backdrop-filter: blur(14px) saturate(130%);
     -webkit-backdrop-filter: blur(14px) saturate(130%);
+  }
+
+  /* Replaces `.glass` on the navbar only while actively scrolling — see
+     useIsScrolling. backdrop-filter is recomposited every frame the content
+     behind it changes, which during a scroll gesture is every frame, and
+     that cost is what this trades away: no blur, a touch more opaque to
+     keep the nav legible over busy backgrounds, for the ~150ms the page is
+     actually moving. `.glass` returns once it settles. Self-contained
+     (rather than layered on top of `.glass`) so there is no dependence on
+     cascade order between the two classes to actually cancel the blur. */
+  .glass-scrolling {
+    background: rgba(20, 16, 14, 0.94);
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+  }
+
+  /* CLI terminal's output pane. Fixed height (set inline per breakpoint by
+     the component) so switching commands never resizes the card — a shorter
+     output just leaves the pane's own scrollbar idle instead of the whole
+     card, and the page below it, jumping. */
+  .cli-scroll {
+    scrollbar-width: thin;
+    scrollbar-color: var(--color-hair) var(--color-ink-700);
+  }
+
+  .cli-scroll::-webkit-scrollbar {
+    width: 8px;
+  }
+  .cli-scroll::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  .cli-scroll::-webkit-scrollbar-thumb {
+    background: var(--color-hair);
+  }
+
+  /* One line of streamed CLI output landing. */
+  .cli-line-in {
+    animation: cli-line-in 0.18s var(--ease-out-expo) both;
   }
 }
 
@@ -146,6 +187,17 @@
   50%,
   100% {
     opacity: 0;
+  }
+}
+
+@keyframes cli-line-in {
+  from {
+    opacity: 0;
+    transform: translateY(3px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
   }
 }
 

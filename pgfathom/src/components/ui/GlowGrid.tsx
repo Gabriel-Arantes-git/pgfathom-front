@@ -57,7 +57,34 @@ export function GlowGrid({
     const proximity = RADIUS * 0.5
     const fade = RADIUS * 0.75
 
-    const onMove = (e: MouseEvent) => {
+    // The page mounts six of these at once, most of them below the fold at
+    // any given scroll position. Each used to add its own document-level
+    // `mousemove` listener that ran a `getBoundingClientRect` and a
+    // `querySelectorAll` on *every* mouse move anywhere on the page — cost
+    // paid by sections nobody could even see, six times over per event, with
+    // nothing capping it to the display's actual refresh rate.
+    //
+    // `nearViewport` is cheap to keep current — it only updates on scroll or
+    // resize — and lets the listener below bail before touching the DOM at
+    // all for a grid that isn't close to visible. `rootMargin` gives it a
+    // head start so the glow is live by the time a card actually scrolls
+    // into view, not popping in a frame late.
+    let nearViewport = false
+    const io = new IntersectionObserver(([entry]) => { nearViewport = entry.isIntersecting }, {
+      rootMargin: '200px',
+    })
+    io.observe(grid)
+
+    let wasInside = false
+    let pendingEvent: MouseEvent | null = null
+    let raf = 0
+
+    const apply = () => {
+      raf = 0
+      const e = pendingEvent
+      pendingEvent = null
+      if (!e) return
+
       const rect = grid.getBoundingClientRect()
       const inside =
         e.clientX >= rect.left &&
@@ -65,14 +92,22 @@ export function GlowGrid({
         e.clientY >= rect.top &&
         e.clientY <= rect.bottom
 
-      const cards = grid.querySelectorAll<HTMLElement>('.glow-card')
-
       if (!inside) {
-        gsap.to(spotlight, { opacity: 0, duration: 0.3, ease: 'power2.out' })
-        cards.forEach((card) => card.style.setProperty('--glow-intensity', '0'))
+        // Only do the reset once, on the frame the cursor actually leaves —
+        // not on every subsequent move while it stays outside, which is most
+        // of them.
+        if (wasInside) {
+          grid.querySelectorAll<HTMLElement>('.glow-card').forEach((card) => {
+            card.style.setProperty('--glow-intensity', '0')
+          })
+          gsap.to(spotlight, { opacity: 0, duration: 0.3, ease: 'power2.out' })
+        }
+        wasInside = false
         return
       }
+      wasInside = true
 
+      const cards = grid.querySelectorAll<HTMLElement>('.glow-card')
       let nearest = Infinity
 
       cards.forEach((card) => {
@@ -107,7 +142,21 @@ export function GlowGrid({
       })
     }
 
+    const onMove = (e: MouseEvent) => {
+      // Cheapest possible bail: a grid that is neither visible nor still
+      // holding a glow from a moment ago has nothing to update.
+      if (!nearViewport && !wasInside) return
+      pendingEvent = e
+      if (!raf) raf = requestAnimationFrame(apply)
+    }
+
     const onLeave = () => {
+      pendingEvent = null
+      if (raf) {
+        cancelAnimationFrame(raf)
+        raf = 0
+      }
+      wasInside = false
       grid.querySelectorAll<HTMLElement>('.glow-card').forEach((card) => {
         card.style.setProperty('--glow-intensity', '0')
       })
@@ -120,6 +169,8 @@ export function GlowGrid({
     return () => {
       document.removeEventListener('mousemove', onMove)
       document.removeEventListener('mouseleave', onLeave)
+      if (raf) cancelAnimationFrame(raf)
+      io.disconnect()
       gsap.killTweensOf(spotlight)
       spotlight.remove()
     }

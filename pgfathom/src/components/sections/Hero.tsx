@@ -1,28 +1,13 @@
 import { useState } from 'react'
 import { useLanguage } from '../../i18n/LanguageContext'
-import { useTypewriter } from '../../hooks/useTypewriter'
 import { SchemaGraph } from '../canvas/SchemaGraph'
 import { TrailingTable } from '../canvas/TrailingTable'
-import { GlowGrid, glowCard } from '../ui/GlowGrid'
+import { CliTerminal } from '../canvas/CliTerminal'
 import { ArrowRightIcon, CheckIcon, CopyIcon, InfoIcon } from '../ui/icons'
-import {
-  COMMAND,
-  DESIGN_DOC,
-  REPORT,
-  REPORT_COVERAGE,
-  REPORT_PROFILE,
-  REPORT_WARNING,
-} from '../../content/data'
-
-const TONE: Record<string, { child: string; ratio: string; note: string }> = {
-  broken: { child: 'text-bone', ratio: 'text-bone', note: 'text-accent' },
-  confirmed: { child: 'text-bone', ratio: 'text-bone', note: 'text-muted' },
-  weak: { child: 'text-muted', ratio: 'text-muted', note: 'text-muted' },
-}
+import { COMMAND, DESIGN_DOC } from '../../content/data'
 
 export function Hero() {
   const { t, lang } = useLanguage()
-  const { value: typed, done } = useTypewriter(COMMAND)
   const [copied, setCopied] = useState(false)
 
   const copy = async () => {
@@ -169,85 +154,7 @@ export function Hero() {
           </p>
         </div>
 
-        <GlowGrid className="fade-up mt-14" intensity={0.75} style={{ animationDelay: '330ms' }}>
-          <div
-            className={glowCard(
-              'relative overflow-hidden rounded-[5px] border border-hair bg-ink-700 shadow-[0_32px_64px_-24px_rgba(0,0,0,0.7)]',
-            )}
-          >
-            <div className="flex h-10 items-center justify-between gap-4 border-b border-hair bg-ink-600 px-3.5">
-              <div className="flex items-center gap-[7px]">
-                <span className="h-[9px] w-[9px] rounded-full bg-hair" />
-                <span className="h-[9px] w-[9px] rounded-full bg-hair" />
-                <span className="h-[9px] w-[9px] rounded-full bg-hair" />
-              </div>
-              <span className="hidden font-mono text-[11px] text-muted md:inline">
-                {t.terminalCaption}
-              </span>
-              <span className="flex items-center gap-1.5 font-mono text-[10.5px] tracking-[0.08em] text-muted uppercase">
-                <span aria-hidden="true" className="h-[5px] w-[5px] rounded-full bg-accent" />
-                read-only
-              </span>
-            </div>
-
-            <div className="overflow-x-auto px-6 pt-6 pb-7 font-mono text-[13px] leading-[1.7]">
-              <div className="flex items-start gap-2.5">
-                <span className="text-accent">$</span>
-                <span className="whitespace-pre text-bone">
-                  {typed}
-                  <span className="caret text-accent">▌</span>
-                </span>
-              </div>
-
-              <div
-                className="mt-5 flex min-w-[600px] flex-col gap-0.5 transition-opacity duration-500"
-                style={{ opacity: done ? 1 : 0 }}
-              >
-                <p className="mt-0 mb-3.5 text-muted">{REPORT_PROFILE}</p>
-
-                {(() => {
-                  let rowIndex = -1
-                  return REPORT.map((row, i) => {
-                    if (row.kind === 'head') {
-                      return (
-                        <p
-                          key={`h-${i}`}
-                          className={`mb-1 text-muted ${row.gap ? 'mt-5' : 'mt-0'}`}
-                        >
-                          {row.text}
-                        </p>
-                      )
-                    }
-
-                    rowIndex += 1
-                    const { child, parent } = t.reportRows[rowIndex]
-                    return (
-                      <div
-                        key={`${child}-${i}`}
-                        className="grid grid-cols-[minmax(0,1fr)_minmax(0,1fr)_76px_132px] gap-4 py-px"
-                      >
-                        <span className={`whitespace-pre ${TONE[row.tone].child}`}>{child}</span>
-                        <span className="whitespace-pre text-muted">{parent}</span>
-                        <span className={`text-right ${TONE[row.tone].ratio}`}>{row.ratio}</span>
-                        <span className={`text-right ${TONE[row.tone].note}`}>{row.note}</span>
-                      </div>
-                    )
-                  })
-                })()}
-
-                {REPORT_COVERAGE.map((line, i) => (
-                  <p key={line} className={`mb-0 text-muted ${i === 0 ? 'mt-5' : 'mt-0.5'}`}>
-                    {line}
-                  </p>
-                ))}
-
-                <p className="mt-4 mb-0 max-w-[78ch] border-l-2 border-accent/50 pl-4 leading-[1.65] text-accent">
-                  {REPORT_WARNING}
-                </p>
-              </div>
-            </div>
-          </div>
-        </GlowGrid>
+        <CliTerminal className="fade-up mt-14" style={{ animationDelay: '330ms' }} />
       </div>
 
       <div className="border-t border-hair">

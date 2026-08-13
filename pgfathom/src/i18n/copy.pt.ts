@@ -26,14 +26,18 @@ export const pt: Copy = {
   copiedCommand: 'Copiado',
   noticeTitle: 'Pré-release. Em desenvolvimento ativo.',
   noticeBody:
-    'O que roda hoje: o pgfathom audit ponta a ponta, e o pgfathom discover passando por geração de candidatos, pontuação, pré-filtro estatístico e validação contra os dados. A mineração de joins e os formatos finais de saída ainda estão pela frente. A saída de terminal mostrada aqui é o design alvo, não uma gravação. Os benchmarks de taxa de recuperação serão publicados quando a ferramenta rodar contra o corpus de referência. Nenhum número é afirmado até lá.',
+    'v0.1.2. O que roda hoje, ponta a ponta: o pgfathom audit, e o pgfathom discover passando por mineração de joins, pontuação, pré-filtro estatístico, validação contra os dados, e saída em terminal, JSON e SQL. O terminal abaixo é interativo e suas saídas são a saída real da ferramenta, não uma simulação — rode discover, audit, help ou version você mesmo. Os benchmarks de taxa de recuperação são medidos contra um corpus público (GitLab, um sistema municipal pt-BR, Discourse) e reproduzíveis com `make benchmark`.',
   facts: [
     { label: 'Somente leitura', detail: 'Sem modo de escrita, sob nenhuma flag, em nenhuma fase' },
     { label: 'Fica em memória', detail: 'Saem contagens e nomes, nunca um valor das suas tabelas' },
     { label: 'Quatro dependências', detail: 'Sem cgo. O go.mod é uma leitura curta' },
     { label: 'Apache-2.0', detail: 'Escolhida pela concessão explícita de patente' },
   ],
-  terminalCaption: 'pgfathom: saída alvo',
+  terminalCaption: 'pgfathom — experimente',
+  cliPlaceholder: 'digite um comando…',
+  cliInputAria: 'Rodar um comando pgfathom',
+  cliRunAria: 'Rodar comando',
+  cliEmptyHint: 'discover · audit · help · version',
   graph: {
     pedido: { name: 'pedido', columns: ['id', 'cliente_id', 'emitido_em'] },
     cliente: { name: 'cliente', columns: ['id', 'razao_social', 'ativo'] },
@@ -52,14 +56,6 @@ export const pt: Copy = {
     sessao: { name: 'sessao', columns: ['id', 'usuario_id', 'expira_em'] },
     log_evento: { name: 'log_evento', columns: ['id', 'ator_id'] },
   },
-  reportRows: [
-    { child: 'os_servico.resp_tecnico', parent: '→ funcionario.id' },
-    { child: 'pedido.cliente_id', parent: '→ cliente.id' },
-    { child: 'lancamento.conta_id', parent: '→ conta.id' },
-    { child: 'item_pedido.pedido_id', parent: '→ pedido.id' },
-    { child: 'endereco.municipio_id', parent: '→ municipio.id' },
-    { child: 'documento.entidade_id', parent: '→ entidade.id' },
-  ],
   joinMiningExample: { child: 'os_servico.resp_tecnico', parent: 'funcionario.id' },
 
   problemEyebrow: 'O problema',
@@ -238,19 +234,19 @@ export const pt: Copy = {
 
   benchEyebrow: 'Como a corretude é medida',
   benchTitle: 'Remova todas as foreign keys e conte quantas voltam.',
-  benchBadge: 'protótipo · números de exemplo',
+  benchBadge: 'corpus público · make benchmark',
   benchLead:
-    'O corpus é público (GitLab, Odoo, Discourse, Redmine, Mastodon), para qualquer um poder reproduzir a execução. Os resultados são divididos entre o que a correspondência de nomes recupera sozinha e o que a evidência de uso soma em cima, porque essa diferença é exatamente o que a mineração de joins existe para fechar.',
+    'O corpus é público (GitLab, um sistema municipal pt-BR, Discourse), medido no regime parcial — metade das keys declaradas removida, a outra metade deixada para a detecção ler, o caso comum — e reproduzível com `make benchmark`. Os resultados são divididos entre o que o perfil de nomenclatura recupera sozinho e o que a detecção de convenção e a mineração de joins somam em cima.',
   colSchema: 'Schema',
   colRecovered: 'Foreign keys recuperadas',
   benchLegend: {
-    byName: 'Correspondência de nomes',
-    byEvidence: 'Evidência de uso',
+    byName: 'Perfil sozinho',
+    byEvidence: '+ detecção e mineração de joins',
   },
   benchAggregate: 'média do corpus',
   metricLabel: 'Taxa de recuperação',
   metricBody:
-    'Pegue um schema com foreign keys completas, remova todas elas, rode o pgfathom e conte quantas voltam. Contra um corpus público (GitLab, Odoo, Discourse, Redmine, Mastodon), para qualquer um poder reproduzir.',
+    'Pegue um schema com foreign keys completas, remova metade delas, rode o pgfathom e conte quantas voltam. Contra um corpus público (GitLab, um sistema municipal pt-BR, Discourse), para qualquer um poder reproduzir com `make benchmark`.',
   fpLabel: 'Zero falsos positivos confirmados',
   fpBody:
     'O recall vai ficar bem abaixo de 100%, e isso é esperado. A métrica sem tolerância é a outra: um relacionamento perdido custa um achado, um errado confirmado custa a ferramenta.',
